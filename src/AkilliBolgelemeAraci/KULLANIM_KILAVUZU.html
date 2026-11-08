@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kentsel Bölgeleme ve Kırılganlık Analiz Aracı — Kullanım Kılavuzu ve Metodoloji El Kitabı</title>
+  
+  <!-- KaTeX CSS (Yerel Öncelikli, CDN Yedekli) -->
+  <link rel="stylesheet" href="katex/katex.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+
+  <!-- KaTeX JS & Auto-Render (Yerel Öncelikli, CDN Yedekli) -->
+  <script defer src="katex/katex.min.js"></script>
+  <script defer src="katex/auto-render.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+  <!-- KaTeX Otomatik Render Tetikleyici -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      function renderMathElements() {
+        if (typeof renderMathInElement === "function") {
+          renderMathInElement(document.body, {
+            delimiters: [
+              {left: "$$", right: "$$", display: true},
+              {left: "$", right: "$", display: false},
+              {left: "\\(", right: "\\)", display: false},
+              {left: "\\[", right: "\\]", display: true}
+            ],
+            throwOnError: false,
+            strict: false
+          });
+        }
+      }
+      if (typeof katex !== "undefined" && typeof renderMathInElement !== "undefined") {
+        renderMathElements();
+      } else {
+        window.addEventListener("load", renderMathElements);
+      }
+      setTimeout(renderMathElements, 100);
+      setTimeout(renderMathElements, 500);
+      setTimeout(renderMathElements, 1500);
+    });
+  </script>
+
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --primary-light: #e0f2fe;
+      --accent: #0f766e;
+      --accent-light: #ccfbf1;
+      --success: #15803d;
+      --success-light: #dcfce7;
+      --warning: #b45309;
+      --warning-light: #fef3c7;
+      --danger: #b91c1c;
+      --danger-light: #fee2e2;
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50: #f8fafc;
+      --border: #cbd5e1;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.75;
+      color: var(--slate-800);
+      background-color: var(--slate-100);
+      padding: 30px 16px;
+    }
+    .wrapper {
+      max-width: 1140px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+      border: 1px solid var(--slate-200);
+    }
+    header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0369a1 100%);
+      color: #ffffff;
+      padding: 44px 40px 36px 40px;
+      border-bottom: 4px solid #38bdf8;
+    }
+    .header-badge {
+      display: inline-block;
+      background: rgba(56, 189, 248, 0.18);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1.3;
+      margin-bottom: 12px;
+      color: #f8fafc;
+    }
+    header p {
+      font-size: 13.5px;
+      color: #cbd5e1;
+      line-height: 1.6;
+    }
+    .toc {
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+      padding: 20px 40px;
+    }
+    .toc-title {
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--slate-700);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+    .toc-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 8px 20px;
+      list-style: none;
+    }
+    .toc-list a {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: color 0.15s;
+    }
+    .toc-list a:hover {
+      color: var(--primary-dark);
+      text-decoration: underline;
+    }
+    .main-content {
+      padding: 40px;
+    }
+    section {
+      margin-bottom: 50px;
+    }
+    h2 {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--slate-900);
+      border-left: 4px solid var(--primary);
+      padding-left: 12px;
+      margin-bottom: 18px;
+    }
+    h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--slate-800);
+      margin: 24px 0 12px 0;
+    }
+    h4 {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--slate-700);
+      margin-bottom: 6px;
+    }
+    p {
+      margin-bottom: 14px;
+      font-size: 14px;
+      color: var(--slate-700);
+    }
+    ol, ul {
+      margin: 0 0 16px 24px;
+      font-size: 14px;
+      color: var(--slate-700);
+    }
+    li {
+      margin-bottom: 10px;
+    }
+    .step-box {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 22px 24px;
+      margin-bottom: 22px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+      position: relative;
+    }
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--slate-200);
+      padding-bottom: 10px;
+    }
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 15px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .step-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin: 0;
+    }
+    .action-badge {
+      display: inline-block;
+      background: #0284c7;
+      color: #ffffff;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-right: 6px;
+    }
+    .tip-badge {
+      display: inline-block;
+      background: #10b981;
+      color: #ffffff;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-right: 6px;
+    }
+    .warn-badge {
+      display: inline-block;
+      background: #f59e0b;
+      color: #ffffff;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-right: 6px;
+    }
+    .math-block {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin: 16px 0;
+      overflow-x: auto;
+    }
+    .math-block .katex-display {
+      margin: 6px 0;
+    }
+    .callout {
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      font-size: 13.5px;
+      line-height: 1.65;
+    }
+    .callout.info {
+      background-color: var(--primary-light);
+      border-left: 4px solid var(--primary);
+      color: #0369a1;
+    }
+    .callout.success {
+      background-color: var(--success-light);
+      border-left: 4px solid var(--success);
+      color: #166534;
+    }
+    .callout.warning {
+      background-color: var(--warning-light);
+      border-left: 4px solid var(--warning);
+      color: #92400e;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 18px 0;
+    }
+    .info-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px;
+    }
+    .formula-card {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 13px;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: middle;
+    }
+    th {
+      background-color: #f1f5f9;
+      color: var(--slate-900);
+      font-weight: 700;
+    }
+    tbody tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    code {
+      background: #f1f5f9;
+      color: #b91c1c;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: Consolas, monospace;
+    }
+    footer {
+      background: #0f172a;
+      color: #94a3b8;
+      padding: 24px 40px;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+  <header>
+    <div class="header-badge">Mekânsal Karar Destek Sistemleri & Sayısal Planlama</div>
+    <h1>Kentsel Bölgeleme ve Kırılganlık Analiz Aracı</h1>
+    <p>
+      Mekânsal Planlar Yapım Yönetmeliği (MPYY) Esaslarına Dayalı Çok Kriterli Mekânsal Ward Kümelemesi, 
+      Değiştirilebilir Alan Birimi Problemi (MAUP) Çözümü ve Açıklanabilir Sınır Ayrım Karar Destek Metodolojisi.
+      <br><b>Geliştirici:</b> Baran Adsuna · <b>Akademik Koordinasyon:</b> Dokuz Eylül Üniversitesi, Mimarlık Fakültesi, Şehir ve Bölge Planlama Bölümü
+    </p>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Kullanım Kılavuzu & Metodoloji Rehberi</div>
+    <ul class="toc-list">
+      <li><a href="#rehber">🚀 1. Adım Adım Uygulama Kılavuzu</a></li>
+      <li><a href="#karar-matrisi">🎯 2. Hangi Durumda Ne Seçilmeli?</a></li>
+      <li><a href="#sozluk">📋 3. Çıktı Tablosu Sözlüğü & Plan Notları</a></li>
+      <li><a href="#kuram">🏛️ 4. Kuramsal ve Yasal Çerçeve (MPYY)</a></li>
+      <li><a href="#maup">📐 5. MAUP Problemi ve Çözüm Matematiği</a></li>
+      <li><a href="#olcum">🔬 6. Sıfır Sentetik Veri & Ölçüm Motoru</a></li>
+      <li><a href="#zscore">📊 7. Z-Skoru Normalizasyon Matematiği</a></li>
+      <li><a href="#ward">🧩 8. Mekânsal Ward Kümelemesi</a></li>
+      <li><a href="#xai">🔍 9. Açıklanabilir Yapay Zeka (XAI)</a></li>
+    </ul>
+  </nav>
+
+  <div class="main-content">
+
+    <!-- ============================================================ -->
+    <!-- BÖLÜM 1: ADIM ADIM UYGULAMA KILAVUZU (EN BAŞTA) -->
+    <!-- ============================================================ -->
+    <section id="rehber">
+      <h2>1. Adım Adım Uygulama Kılavuzu (Sıfırdan Eksiksiz İş Akışı)</h2>
+      <p>
+        Bu bölüm; eklentiyi ilk defa açan bir şehir plancısının veya araştırmacının hiçbir aşamada takılmadan, 
+        hangi veriyi nereye yükleyeceğini, hangi butona ne zaman basacağını ve çıkan sonuçları nasıl yorumlayacağını 
+        adım adım açıklamaktadır.
+      </p>
+
+      <!-- ADIM 1 -->
+      <div class="step-box">
+        <div class="step-header">
+          <span class="step-number">1</span>
+          <h3 class="step-title">Katmanları ve Projeksiyon Sistemini ($EPSG:5253$) Hazırlayın</h3>
+        </div>
+        <p><span class="action-badge">NE YAPMALISINIZ?</span> QGIS projenizde çalışma alanınıza ait katmanları açın.</p>
+        <ul>
+          <li><b>Plan Sınırı (Poligon):</b> Çalışma alanınızın dış sınırını gösteren poligon katmanı.</li>
+          <li><b>Yol Ağı (Çizgi):</b> Kent içi ana ve ara ulaşım omurgasını oluşturan çizgi (LineString) katmanı.</li>
+          <li><b>İmar Adaları (Poligon):</b> Parselasyon ve ada sınırlarını içeren poligon katmanı.</li>
+          <li><b>Tekil Binalar (Opsiyonel Poligon):</b> Yapı ayak izleri katmanı (varsa kat adedi, yapı durumu içerir).</li>
+          <li><b>Doğal Eşikler (Çizgi/Poligon):</b> Dere yatakları, diri fay hatları, sit alanları, taşkın risk bölgeleri.</li>
+          <li><b>DEM Rasterı (GeoTIFF):</b> Sayısal Yükselti Modeli (Horn eğimi ve ortalama rakım kotu için).</li>
+        </ul>
+        <div class="callout warning">
+          <span class="warn-badge">HAYATİ PÜF NOKTASI</span> <b>Projeksiyon Kontrolü:</b>
+          Tüm katmanlarınızın yerel metrik projeksiyon sisteminde (İzmir ve Ege için <b>$EPSG:5253$</b> [TUREF / GK Zone 27] veya $EPSG:32635$) 
+          olduğundan emin olun. Coğrafi derece ($EPSG:4326$) katmanları metrik alan ($\text{m}^2$, $\text{ha}$) ve mesafe ($\text{m}$) ölçemez.
+        </div>
+      </div>
+
+      <!-- ADIM 2 -->
+      <div class="step-box">
+        <div class="step-header">
+          <span class="step-number">2</span>
+          <h3 class="step-title">Eklentiyi Açın ve Tek Tıkla Otomatik Eşleştirin</h3>
+        </div>
+        <p><span class="action-badge">NE YAPMALISINIZ?</span> QGIS üst menüsünden <b>Vektör → Kentsel Bölgeleme Aracı</b> menüsüne veya araç çubuğundaki renkli bölgeleme ikonuna tıklayın.</p>
+        <p>
+          Pencere açıldığında 1. Sekmenin hemen üstünde yer alan 
+          <br><b>⚡ "Projedeki Tüm Katmanları, Yapıları ve Doğal Eşikleri Otomatik Eşleştir"</b> 
+          butonuna basın.
+        </p>
+        <div class="callout success">
+          <span class="tip-badge">OTOMATİK ALGILAMA</span> 
+          Eklenti; projenizdeki katman isimlerini akıllı kelime taramasıyla inceler (örn. <i>yol, cadde, ada, parsel, bina, yapi, dere, fay, sit, risk, dem, yukseklik</i>). 
+          Doğru katmanları ve <i>kullanim, kat, durum, nufus</i> gibi kritik öznitelik sütunlarını otomatik olarak kutulara yerleştirir. 
+          Gerekirse açılır kutulardan elle değişiklik yapabilirsiniz.
+        </div>
+      </div>
+
+      <!-- ADIM 3 -->
+      <div class="step-box">
+        <div class="step-header">
+          <span class="step-number">3</span>
+          <h3 class="step-title">Analiz Derinliği ve Modunu Belirleyin</h3>
+        </div>
+        <p><span class="action-badge">NE SEÇMELİSİNİZ?</span> Pencerenin en üstündeki <b>"Analiz Derinliği & Mod"</b> açılır kutusundan iki moddan birini seçin:</p>
+        <div class="grid-2">
+          <div class="info-card" style="border-left: 4px solid #10b981;">
+            <h4>🌱 Standart Bölgeleme Modu (Hızlı & Pratik)</h4>
+            <p>
+              <b>Ne üretir?</b> MPYY $A_1 \dots A_{28}$ klasik doku kodları, alan ağırlıklı kat, $\text{TAKS}$, nüfus ve sınır ayrım gerekçeleri.
+              <br><b>Ne zaman seçilmeli?</b> İlk etütler, morfolojik homojen bölgeleme ve hızlı ön raporlama için idealdir.
+            </p>
+          </div>
+          <div class="info-card" style="border-left: 4px solid #0284c7;">
+            <h4>🔬 İleri Sentez & Müdahale Atlası Modu (Tam Teşekküllü)</h4>
+            <p>
+              <b>Ne üretir?</b> $M_1 \dots M_{28}$ kodları, 3B Kırılganlık ($V = \frac{E \cdot S}{AC}$), DEM Rakım kotu ($\bar{Z}$), 
+              baskın kanıt kombinasyonu, somut müdahale kararları, $1/5000\text{ NİP}$ & $1/1000\text{ UİP}$ plan hükümleri 
+              ve projedeki tüm analizleri belgeleyen <b>Analiz İzleme Matrisi (CSV)</b>.
+              <br><b>Ne zaman seçilmeli?</b> Kapsamlı imar planı sentezi ve afet sakınım kararları için önerilir.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADIM 4 -->
+      <div class="step-box">
+        <div class="step-header">
+          <span class="step-number">4</span>
+          <h3 class="step-title">Nüfus Dağıtım Yöntemini Seçin</h3>
+        </div>
+        <p><span class="action-badge">NE SEÇMELİSİNİZ?</span> 1. Sekmedeki "B. Nüfus Verisi ve Dağıtım Yöntemi" alanından elinizdeki veriye uygun olanı işaretleyin:</p>
+        <ul>
+          <li><b>1. Seçenek (Katman Sütunundan Oku):</b> İmar adası katmanınızda doğrudan güvenilir yerleşik nüfus sütunu varsa seçin.</li>
+          <li><b>2. Seçenek (Elle Toplam Projeksiyon Nüfusu Gir):</b> Çalışma alanının toplam nüfusunu (Örn: $45.000\text{ kişi}$) biliyorsanız kutuya yazın. Eklenti; Sanayi ve Tarım adalarına <b>kesinlikle sıfır nüfus</b> vererek nüfusu sadece konut ve ticaret adalarına inşaat alanına oranla dağıtır.</li>
+          <li><b>3. Seçenek (Bina Başına Nüfus Kabulü):</b> Yalnızca bina kat sayıları varsa bina/kat başına ortalama hane kabulüyle dağıtım yapar.</li>
+        </ul>
+      </div>
+
+      <!-- ADIM 5 -->
+      <div class="step-box">
+        <div class="step-header">
+          <span class="step-number">5</span>
+          <h3 class="step-title">Doğal Eşikleri ve DEM Rasterını Kontrol Edin (2. Sekme)</h3>
+        </div>
+        <p><span class="action-badge">NE YAPMALISINIZ?</span> <b>"2. Doğal Eşikler & DEM"</b> sekmesine geçin:</p>
+        <ul>
+          <li>Tabloda projenizdeki dere, fay, sit, taşkın risk poligonları listelenir. "Eşik Rolü" sütununun doğru atandığını teyit edin (Çizgisel eşikler için en yakın mesafe, poligon eşikler için alan kesişim payı hesaplanır).</li>
+          <li>Alt kısımdaki Sayısal Yükselti Modeli (DEM) rasterını seçin. Eklenti GeoTIFF piksel verisinden hücre eğimini ($\%$) ve ortalama rakım kotunu ($\text{m}$) otomatik hesaplar.</li>
+        </ul>
+      </div>
+
+      <!-- ADIM 6 -->
+      <div class="step-box">
+        <div class="step-header">
+          <span class="step-number">6</span>
+          <h3 class="step-title">Hedef Alt Bölge Sayısını ($K$) Belirleyin ve Çalıştırın</h3>
+        </div>
+        <p><span class="action-badge">NE YAPMALISINIZ?</span> <b>"3. Ağırlıklar & Ayarlar"</b> sekmesinde hedef bölge sayısı $K$'yı belirleyin:</p>
+        <ul>
+          <li>Küçük çalışma alanları ($< 50\text{ ha}$) için: $K \in [12, 16]$</li>
+          <li>Orta ölçekli kent parçaları ($50 - 200\text{ ha}$) için: $K \in [18, 24]$</li>
+          <li>Büyük metropol veya ilçe bütünü için: $K = 28$ ($A_1 \dots A_{28}$ veya $M_1 \dots M_{28}$)</li>
+        </ul>
+        <p>Ardından alttaki yeşil <b>"▶ ÇALIŞTIR VE ALT BÖLGELERİ OLUŞTUR"</b> butonuna basın.</p>
+      </div>
+
+      <!-- ADIM 7 -->
+      <div class="step-box">
+        <div class="step-header">
+          <span class="step-number">7</span>
+          <h3 class="step-title">Sonuçları Haritada ve Raporda İnceleyin</h3>
+        </div>
+        <p><span class="action-badge">SONUÇTA NE GÖRÜRSÜNÜZ?</span> Analiz tamamlandığında (ortalama 2-5 saniye):</p>
+        <ul>
+          <li>QGIS harita tuvaline <b>`Alt_Bolgeler_A1_A28`</b> (veya İleri modda `Alt_Bolgeler_M1_M28`) katmanı kategorize kurumsal renk paleti ve etiketleriyle otomatik eklenir.</li>
+          <li><b>4. Sekmede (Sınır Ayrım Gerekçeleri):</b> Her bir alt bölgenin neden birleştiği, ölçülen gerçek verileri ve komşularından ayrılmasını sağlayan en yüksek $Z$-skoru farkına sahip ilk 3 değişken listelenir.</li>
+          <li><b>"📊 Bölgeleme Tablosu (CSV)"</b> butonuna basarak Excel'de doğrudan Türkçe karakterlerle açılan resmi karar destek tablosunu kaydedin.</li>
+          <li>İleri modda iseniz <b>"📋 Analiz İzleme Matrisi (CSV)"</b> butonuna basarak projenizdeki tüm katmanların sentezdeki rollerini belgeleyen matrisi dışa aktarın.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- BÖLÜM 2: HANGİ DURUMDA NE SEÇİLMELİ? (KARAR MATRİSİ) -->
+    <!-- ============================================================ -->
+    <section id="karar-matrisi">
+      <h2>2. Hangi Durumda Ne Seçilmeli? (Pratik Karar ve Sorun Giderme Matrisi)</h2>
+      <p>Karşılaştığınız veri durumuna ve planlama hedefinize göre en doğru seçenekleri aşağıdaki tablodan belirleyebilirsiniz:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Karşılaşılan Durum / Planlama Hedefi</th>
+            <th>Önerilen Mod & Seçenek</th>
+            <th>Nedeni ve Sağladığı Avantaj</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Hızlı bir morfolojik etüt veya ders stüdyosu ön bölgelemesi yapıyorum.</td>
+            <td>🌱 <b>Standart Bölgeleme Modu</b></td>
+            <td>Karmaşık afet matrislerine girmeden saf doku, kat ve arazi kullanımı homojenliğini ($A_1 \dots A_{28}$) saniyeler içinde üretir.</td>
+          </tr>
+          <tr>
+            <td>Nazım ve Uygulama İmar Planı için afet sakınım, müdahale kararı ve kanıt zinciri üretiyorum.</td>
+            <td>🔬 <b>İleri Sentez & Müdahale Atlası Modu</b></td>
+            <td>3B Kırılganlık ($V = \frac{E \cdot S}{AC}$), rakım kotu, kanıt kombinasyonu, müdahale kararı, plan karşılığı ve Analiz İzleme Matrisini eksiksiz üretir.</td>
+          </tr>
+          <tr>
+            <td>İmar adası katmanımda nüfus sütunu yok veya güvenilir değil.</td>
+            <td><b>Mod 2: Elle Toplam Nüfus Gir</b></td>
+            <td>Çalışma alanının TÜİK veya projeksiyon toplam nüfusunu yazmanız yeterlidir; sanayi/tarıma 0 vererek binalara adil dağıtır.</td>
+          </tr>
+          <tr>
+            <td>Yol ağında kavşak göbekleri ve refüjler ada gibi görünüyor.</td>
+            <td><b>"Yol içi refüj ve kavşak adacıklarını süz"</b> onay kutusu açık kalsın</td>
+            <td>Eklenti geometrik en-boy oranından refüjleri tanır ve morfolojik birleşmeyi bozmalarını engeller.</td>
+          </tr>
+          <tr>
+            <td>Bölgeler çok ince uzun şeritler halinde çıkıyor.</td>
+            <td>3. Sekmede <b>$w_{\text{geo}}$ (Kompaktlık Ağırlığı)</b> değerini $1.0 \to 1.8$ yapın</td>
+            <td>Mekânsal yakınlık cezasını artırarak dairesel ve derli toplu mahalle sınırları üretir.</td>
+          </tr>
+          <tr>
+            <td>Birkaç bölge devasa çıkarken diğerleri çok küçük kalıyor.</td>
+            <td>3. Sekmede <b>$\lambda_{\text{cap}}$ (Alan Tavanı Katsayısı)</b> değerini $4.0 \to 2.0$ yapın</td>
+            <td>Bölgelerin maksimum yüzölçümünü sınırlar ve eşit büyüklükte alt bölgeler oluşturur.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- BÖLÜM 3: ÇIKTI ÖZNİTELİK SÖZLÜĞÜ VE PLAN KARARLARI -->
+    <!-- ============================================================ -->
+    <section id="sozluk">
+      <h2>3. Çıktı Öznitelik Sözlüğü ve Planlama Kararları</h2>
+      <p>
+        Üretilen katmanın öznitelik tablosunda ve CSV çıktısında yer alan tüm alanlar 
+        açık Türkçe isimlendirilmiş olup plan açıklama raporlarına doğrudan aktarılabilir:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Öznitelik Alanı</th>
+            <th>Format</th>
+            <th>Birim / Formülasyon</th>
+            <th>Tanım ve Planlama Fonksiyonu</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>Bolge_Kodu</code></td>
+            <td>Metin</td>
+            <td>$A_1 \dots A_{28}$ / $M_1 \dots M_{28}$</td>
+            <td>Alt bölgenin resmi planlama ve sentez kodu.</td>
+          </tr>
+          <tr>
+            <td><code>Baskin_Karakter</code></td>
+            <td>Metin</td>
+            <td>Metin</td>
+            <td>Bölgenin baskın arazi kullanımı ve kentsel doku kimliği.</td>
+          </tr>
+          <tr>
+            <td><code>Bolgeleme_ve_Ayrim_Gerekcesi</code></td>
+            <td>Metin</td>
+            <td>Uzun Metin</td>
+            <td>İç bütünlük parametreleri ve komşulardan ayrışma gerekçesinin tam sentez cümlesi.</td>
+          </tr>
+          <tr>
+            <td><code>Komsu_Bolgelerden_Ayrim_Nedeni</code></td>
+            <td>Metin</td>
+            <td>Uzun Metin</td>
+            <td>Komşu alt bölgelerle $Z$-skoru matrisinde en yüksek farkı oluşturan ilk 3 değişkenin sayısal açıklaması.</td>
+          </tr>
+          <tr>
+            <td><code>Taban_Alani_Orani_TAKS_Yuzde</code></td>
+            <td>Ondalıklı</td>
+            <td>$\%$</td>
+            <td>Bölge içerisindeki toplam yapı taban alanı yoğunluğu ($\text{TAKS}_i \in [0, 100]\,\%$).</td>
+          </tr>
+          <tr>
+            <td><code>Ortalama_Kat_Sayisi</code></td>
+            <td>Ondalıklı</td>
+            <td>$\text{Kat}$</td>
+            <td>Bina taban alanı ağırlıklı ortalama kat yüksekliği ($\bar{K}_i$).</td>
+          </tr>
+          <tr>
+            <td><code>Baskin_Yapi_Nizami</code></td>
+            <td>Metin</td>
+            <td>Metin</td>
+            <td>Bölgede hâkim olan yapı düzeni (Bitişik, Ayrık/Blok, Seyrek Kırsal, Yapısız).</td>
+          </tr>
+          <tr>
+            <td><code>Kotu_Durumdaki_Yapi_Orani_Yuzde</code></td>
+            <td>Ondalıklı</td>
+            <td>$\%$</td>
+            <td>Fiziksel durumu kötü, metruk veya riskli olan yapıların alan oranı ($\text{KötüYapı}_i \in [0, 100]\,\%$).</td>
+          </tr>
+          <tr>
+            <td><code>Toplam_Nufus_Kisi</code></td>
+            <td>Tamsayı</td>
+            <td>$\text{Kişi}$</td>
+            <td>Bölgeye düşen yerleşik nüfus $P_i$ (Sanayi ve Tarım bölgelerinde sıfırdır).</td>
+          </tr>
+          <tr>
+            <td><code>Nufus_Yogunlugu_Kisi_Ha</code></td>
+            <td>Ondalıklı</td>
+            <td>$\text{Kişi}/\text{ha}$</td>
+            <td>Brüt nüfus yoğunluğu ($P_i / \text{Alan}_i$).</td>
+          </tr>
+          <tr>
+            <td><code>Ortalama_Egim_Yuzde</code></td>
+            <td>Ondalıklı</td>
+            <td>$\%$</td>
+            <td>DEM rasterından örneklenen ortalama topoğrafik eğim ($\text{Eğim}_i \in [0, \infty)\,\%$).</td>
+          </tr>
+          <tr>
+            <td><code>Ortalama_Rakim_m</code></td>
+            <td>Ondalıklı</td>
+            <td>$\text{Metre (m)}$</td>
+            <td>DEM rasterından örneklenen deniz seviyesinden ortalama yükseklik kotu ($\bar{Z}_i$).</td>
+          </tr>
+          <tr>
+            <td><code>Deprem_Kirilganlik_Sinifi</code></td>
+            <td>Metin</td>
+            <td>$5\text{ Düzey}$</td>
+            <td>Fay mesafesi $d(c_i, \mathcal{L}_{\text{fay}})$, kötü yapı oranı, kat sayısı ve $\text{TAKS}$ bileşkesi ($\text{Çok Düşük} \dots \text{Çok Yüksek}$).</td>
+          </tr>
+          <tr>
+            <td><code>Sel_Kirilganlik_Sinifi</code></td>
+            <td>Metin</td>
+            <td>$5\text{ Düzey}$</td>
+            <td>Dere mesafesi $d(c_i, \mathcal{L}_{\text{dere}})$, ortalama rakım $\bar{Z}_i$, geçirimli yüzey ve taşkın payı bileşkesi ($\text{Çok Düşük} \dots \text{Çok Yüksek}$).</td>
+          </tr>
+          <tr>
+            <td><code>Genel_Kirilganlik_Sinifi</code></td>
+            <td>Metin</td>
+            <td>$5\text{ Düzey}$</td>
+            <td>3 boyutlu afet risk matrisine dayalı genel etkilenebilirlik sınıfı: $V_i = \frac{E_i \cdot S_i}{AC_i}$.</td>
+          </tr>
+          <tr>
+            <td><code>Baskin_Kombinasyon</code></td>
+            <td>Metin</td>
+            <td>Uzun Metin</td>
+            <td>Bölgeyi oluşturan çok kriterli kanıt zinciri: $\mathcal{L}_{\text{fay}} \cap \mathcal{L}_{\text{dere}} \cap \mathcal{P}_{\text{sit}} \cap \dots$</td>
+          </tr>
+          <tr>
+            <td><code>Mudahale_Karari</code></td>
+            <td>Metin</td>
+            <td>Uzun Metin</td>
+            <td>Planlama müdahalesi: Afet tamponu, seyreltme, kentsel yenileme, TOD, koruma ve sağlıklaştırma vb.</td>
+          </tr>
+          <tr>
+            <td><code>Plan_Karsiligi</code></td>
+            <td>Metin</td>
+            <td>Uzun Metin</td>
+            <td>$1/5000\text{ NİP}$ ve $1/1000\text{ UİP}$'te karşılık gelen kullanım kararı, emsal/yoğunluk ve plan hükümleri.</td>
+          </tr>
+          <tr>
+            <td><code>Dereye_Uzaklik_m</code></td>
+            <td>Ondalıklı</td>
+            <td>$\text{Metre (m)}$</td>
+            <td>En yakın akarsu/dere yatağına olan Öklid mesafesi $d(c_i, \mathcal{L}_{\text{dere}})$.</td>
+          </tr>
+          <tr>
+            <td><code>Fay_Hattina_Uzaklik_m</code></td>
+            <td>Ondalıklı</td>
+            <td>$\text{Metre (m)}$</td>
+            <td>En yakın diri fay çizgisine olan Öklid mesafesi $d(c_i, \mathcal{L}_{\text{fay}})$.</td>
+          </tr>
+          <tr>
+            <td><code>Sit_Alani_Orani_Yuzde</code></td>
+            <td>Ondalıklı</td>
+            <td>$\%$</td>
+            <td>Kentsel, arkeolojik veya doğal sit alanı kapsamındaki yüzölçümü payı ($\text{SitOranı}_i \in [0, 100]\,\%$).</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- BÖLÜM 4: KURAMSAL VE YASAL ÇERÇEVE -->
+    <!-- ============================================================ -->
+    <section id="kuram">
+      <h2>4. Kuramsal ve Yasal Çerçeve (MPYY ve Kentsel Morfoloji)</h2>
+      <p>
+        İmar mevzuatımızda kentsel alanların planlanması, kademeli birliktelik ve hiyerarşik kademelenme esasına dayanır. 
+        <b>Mekânsal Planlar Yapım Yönetmeliği (MPYY)</b> Madde 5, 7 ve 11 hükümleri uyarınca plan kararları; 
+        fiziki çevre verileri, demografik dinamikler, yapı yoğunlukları ($\text{TAKS}$, $\text{KAKS}$, kat adedi), 
+        ulaşım omurgası ve afet/doğal eşiklerin bütüncül analizi sonucunda etaplanabilir ve homojen alt bölgelere dayandırılmalıdır.
+      </p>
+      <p>
+        Kentsel morfoloji kuramında (Conzenian ve Caniggian ekolleri), kent dokusu üç temel bileşenin diyalektik birleşimidir:
+        <i>1) Parselasyon ve mülkiyet dokusu ($\mathcal{P}$)</i>, <i>2) Yol ağı deseni ($\mathcal{G}$)</i>, ve <i>3) Yapı kütleleri ($\mathcal{B}$)</i>.
+        Geleneksel planlama pratiğinde $1/5000$ ölçekli Nazım İmar Planı (NİP) ve $1/1000$ ölçekli Uygulama İmar Planı (UİP) 
+        etaplama sınırları çoğunlukla sezgisel ve sübjektif yöntemlerle çizilmekte, bu durum plan açıklama raporlarında 
+        <i>"Sınır neden bu parselden geçti de komşu adadan geçmedi?"</i> sorusunu yanıtsız bırakmaktadır.
+      </p>
+      <div class="callout success">
+        <b>Sistemin Kuramsal Çözümü:</b> Bu karar destek aracı; sezgisel sınır çizimini tamamen ortadan kaldırarak 
+        çalışma alanındaki her bir imar adasını morfolojik, işlevsel, demografik ve jeolojik 
+        vektörleriyle matematiksel uzaya taşır; çok kriterli optimizasyon ile nesnel alt bölgeleri 
+        ($A_1 \dots A_K$ veya $M_1 \dots M_K$) türetir ve gerekçelerini resmi rapor formatında belgeler.
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- BÖLÜM 5: MAUP PROBLEMİ VE ÇÖZÜM MATEMATİĞİ -->
+    <!-- ============================================================ -->
+    <section id="maup">
+      <h2>5. Değiştirilebilir Alan Birimi Problemi (MAUP) ve Çözüm Matematiği</h2>
+      <p>
+        Mekânsal analiz ve kentsel coğrafya yazınında <b>MAUP (Modifiable Areal Unit Problem)</b>, 
+        mekânsal verilerin toplandığı geometrik birimlerin sınırları veya boyutları değiştirildiğinde 
+        istatistiksel sonuçların, korelasyon katsayılarının ve modellerin radikal biçimde sapması olgusudur (Openshaw, 1984).
+      </p>
+      
+      <div class="grid-2">
+        <div class="info-card">
+          <h4>A. Ölçek Etkisi ($\text{Scale Effect}$)</h4>
+          <p>
+            Mekânsal birimler toplulaştırıldıkça (örneğin $\text{bina} \to \text{ada} \to \text{mahalle} \to \text{ilçe}$) 
+            bireysel varyans sönümlenir, gruplar arası yapay varyans şişer:
+            <div class="math-block">
+              $$\text{Var}(\bar{X}) = \frac{\sigma^2}{N} \cdot \left[ 1 + (n - 1)\rho \right]$$
+            </div>
+            Eğer birim büyüklükleri kontrol edilmezse, birkaç devasa poligon tüm veri dağılımını tahrip eder.
+          </p>
+        </div>
+        <div class="info-card">
+          <h4>B. Gruplama Etkisi ($\text{Zone Effect}$)</h4>
+          <p>
+            Aynı ölçekte kalınsa dahi sınırların yönü ve konfigürasyonu değiştirildiğinde (Gerrymandering etkisi) 
+            istatistiksel göstergeler yapay olarak değişir. Sınır komşuluğu kısıtı $\mathcal{E}$ konulmadığında 
+            birbirinden kopuk adaların aynı kümeye atanması morfolojik bütünlüğü bozar.
+          </p>
+        </div>
+      </div>
+
+      <h3>MAUP'a Karşı 4 Kademeli Çözüm Mimarisi</h3>
+      <ol>
+        <li>
+          <b>Morfolojik Birincil Hücreleme ($\text{Street-Block Tessellation}$):</b>
+          Rastgele kare ızgaralar veya yapay mahalle sınırları yerine, 
+          kentin fiziksel mekânda en kararlı ve değişmez sınırı olan <b>Yol Ağı Grafı tarafından çevrelenen gerçek İmar Adaları</b> 
+          temel analiz hücresi ($c_i \in \mathcal{C}$) olarak tanımlanır:
+          <div class="math-block">
+            $$\mathcal{C} = \text{Polygonize}\left(\text{UnaryUnion}\left(\mathcal{L}_{\text{yol}} \cup \partial \Omega_{\text{plan}}\right)\right)$$
+          </div>
+        </li>
+        <li>
+          <b>Mekânsal Topolojik Komşuluk Çizgesi $\mathcal{G} = (\mathcal{V}, \mathcal{E})$ Kısıtı:</b>
+          Kümeleme işlemi öznitelik uzayında serbest bırakılmaz. $i$ ve $j$ hücrelerinin birleşebilmesi için 
+          aralarında ortak bir sınır hattı (en az $1.0\text{ m}$ kenar kesişimi) bulunması zorunludur:
+          <div class="math-block">
+            $$\mathcal{E} = \left\{(i, j) \mid \text{Length}(\partial c_i \cap \partial c_j) \ge 1.0\text{ m}\right\} \implies c_i \text{ ve } c_j \text{ yalnızca } (i, j) \in \mathcal{E} \text{ ise birleşebilir}$$
+          </div>
+        </li>
+        <li>
+          <b>Üstel Alan Tavanı Ceza Fonksiyonu ($\text{Capacity Penalty}$):</b>
+          Ölçek etkisini dengelemek amacıyla, iki bölge birleştiğinde oluşan toplam alan $\text{Alan}_a + \text{Alan}_b$, 
+          izin verilen alan kapasite tavanı $A_{\text{cap}}$ değerini aştığında kümeleme maliyeti üstel olarak cezalandırılır:
+          <div class="math-block">
+            $$A_{\text{cap}} = \left(\frac{\sum_{i=1}^N \text{Alan}(c_i)}{K}\right) \cdot \lambda_{\text{cap}}$$
+            $$\text{Cost}(a, b) = \frac{W_a W_b}{W_a + W_b} \cdot \left( D_{ab}^2 + \varepsilon \right) \cdot \left[ 1 + \left(\frac{\text{Alan}_a + \text{Alan}_b}{A_{\text{cap}}}\right)^p \right]$$
+          </div>
+          Burada $W_a = \sqrt{\text{Alan}_a}$, $\lambda_{\text{cap}} = 4.0$, ve $p = 2.0$'dir.
+        </li>
+        <li>
+          <b>Varyans Minimizasyonu İlkesi:</b>
+          Ward optimizasyonu ile bölge-içi kareler toplamı artışı ($\Delta \text{ESS}$) minimize edilir:
+          <div class="math-block">
+            $$\min \sum_{k=1}^K \sum_{i \in \mathcal{S}_k} \|V_i - \bar{V}_k\|^2 \iff \min \Delta \text{ESS}(a, b)$$
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- BÖLÜM 6: SIFIR SENTETİK VERİ VE ÖLÇÜM MOTORU -->
+    <!-- ============================================================ -->
+    <section id="olcum">
+      <h2>6. Sıfır Sentetik Veri İlkesi ve Morfometrik Ölçüm Motoru</h2>
+      <p>
+        Eklentinin en katı kuralı <b>sıfır sentetik veri</b> ilkesidir. 
+        Hiçbir parametre için varsayımsal veya rastgele sayı üretilmez. 
+        Tüm değişkenler girdi katmanlarının geometrik kesişimleri üzerinden hesaplanır:
+      </p>
+
+      <div class="formula-card">
+        <h4>A. Taban Alanı Kat Sayısı ($\text{TAKS}$) ve Yapı Yoğunluğu</h4>
+        <p>Her bir hücre $c_i$ için imar adası alanı $\text{Alan}(c_i)$ ve ada içerisindeki bina ayak izlerinin toplam alanı üzerinden net $\text{TAKS}$ hesaplanır:</p>
+        <div class="math-block">
+          $$\text{TAKS}_i = \min\left(1.0, \, \frac{\sum_{b \in \mathcal{B}_i} \text{Alan}(b \cap c_i)}{\text{Alan}(c_i)}\right)$$
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <h4>B. Alan Ağırlıklı Ortalama Kat Sayısı</h4>
+        <p>Geniş parseller içerisindeki tekil küçük yapıların ada kat ortalamasını saptırmasını engellemek için taban alanı ağırlıklı ortalama uygulanır:</p>
+        <div class="math-block">
+          $$\bar{K}_i = \frac{\sum_{b \in \mathcal{B}_i} \left(\text{Kat}_b \cdot \text{Alan}(b)\right)}{\sum_{b \in \mathcal{B}_i} \text{Alan}(b)}$$
+        </div>
+        <p><b>Kural 3 Teyidi:</b> $\text{TAKS}_i < 0.05$ veya $\text{sh}_{\text{tarım}} \ge 0.70$ olan hücrelerde $\bar{K}_i \le 2.0\text{ kat}$ olarak sınırlandırılır.</p>
+      </div>
+
+      <div class="formula-card">
+        <h4>C. Kötü Durumdaki Yapı Oranı</h4>
+        <p>Deprem güvenliği zayıf veya metruk yapıların bina taban alanları oranlanır:</p>
+        <div class="math-block">
+          $$\text{KötüYapı}_i = \frac{\sum_{b \in \mathcal{B}_i^{\text{risk}}} \text{Alan}(b)}{\sum_{b \in \mathcal{B}_i} \text{Alan}(b)}$$
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <h4>D. Nüfus Dağıtımı ve Sektörel Ayıklama Fonksiyonu (Kural 1)</h4>
+        <p>Sanayi/OSB ($\text{lu}_{\text{sanayi}}$) ve Tarım ($\text{lu}_{\text{tarım}}$) alanlarında gece yerleşik nüfusu barınamaz. Eklenti bu alanların nüfus ağırlığını kesin sıfır alır:</p>
+        <div class="math-block">
+          $$w_{\text{nüfus}}(c_i) = \begin{cases} 0.0, & \text{eğer } \text{sh}_{\text{sanayi}} \ge 0.45 \text{ veya } \text{sh}_{\text{tarım}} \ge 0.75 \text{ veya } \text{sh}_{\text{konut}} \le 0.02 \\ A_{\text{konut-inşaat}}(c_i) \cdot \bar{K}_i \cdot (\text{sh}_{\text{konut}} + 0.35 \cdot \text{sh}_{\text{ticaret}}), & \text{diğer durumlarda} \end{cases}$$
+        </div>
+        <p>Elle girilen toplam nüfus $P_{\text{total}}$ sisteme verildiğinde dağıtım normalize edilir:</p>
+        <div class="math-block">
+          $$P_i = P_{\text{total}} \cdot \frac{w_{\text{nüfus}}(c_i)}{\sum_{j=1}^N w_{\text{nüfus}}(c_j)}$$
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <h4>E. Doğal Eşikler: Öklid Mesafesi ve Kesişim Oranları</h4>
+        <p>Çizgisel eşikler için (Dere Yatağı $\mathcal{L}_{\text{dere}}$, Diri Fay Hattı $\mathcal{L}_{\text{fay}}$) QGIS Spatial Index ile en yakın geometrik mesafe metre cinsinden ölçülür:</p>
+        <div class="math-block">
+          $$d(c_i, \mathcal{L}) = \min_{p \in c_i, q \in \mathcal{L}} \|p - q\|_2$$
+        </div>
+        <p>Poligon eşikler için (Sit Alanı $\mathcal{P}_{\text{sit}}$, Taşkın Riski $\mathcal{P}_{\text{risk}}$) alan payı hesaplanır:</p>
+        <div class="math-block">
+          $$\text{Share}(c_i, \mathcal{P}) = \frac{\text{Alan}(c_i \cap \mathcal{P})}{\text{Alan}(c_i)}$$
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <h4>F. Sayısal Yükselti Modeli (DEM): Eğim Gradyanı ve Ortalama Rakım Kotu</h4>
+        <p>Raster tabakasından $c_i$ poligonunun sınır kutusu üzerinde $4 \times 4 = 16$ noktalı ızgara örneklemesi yapılarak Horn gradyan türevi ve ortalama rakım kotu hesaplanır:</p>
+        <div class="math-block">
+          $$g_x = \frac{Z(x + \Delta x, y) - Z(x - \Delta x, y)}{2 \Delta x}, \quad g_y = \frac{Z(x, y + \Delta y) - Z(x, y - \Delta y)}{2 \Delta y}$$
+          $$\text{Eğim}_i(\%) = 100 \cdot \sqrt{g_x^2 + g_y^2}, \quad \bar{Z}_i = \frac{1}{M_i}\sum_{m=1}^{M_i} Z_m \text{ (m)}$$
+        </div>
+      </div>
+
+      <div class="formula-card">
+        <h4>G. 3 Boyutlu Kırılganlık ve Afet Riski Modeli ($E, S, AC$)</h4>
+        <p>Kentsel planlama ve afet zarar görebilirlik kuramına dayalı olarak her alt bölgenin genel kırılganlık indeksi $V_i$ hesaplanır:</p>
+        <div class="math-block">
+          $$V_i = \frac{E_i \cdot S_i}{AC_i}$$
+        </div>
+        <p>
+          Burada $E_i$ (Maruziyet / Exposure: Fay ve dere mesafeleri, taşkın payı, eğim), 
+          $S_i$ (Duyarlılık / Sensitivity: Kötü yapı payı, ortalama kat, $\text{TAKS}$, nüfus yoğunluğu), 
+          ve $AC_i$ (Uyum ve Başa Çıkma Kapasitesi / Adaptive Capacity: Donatı erişimi, açık alan geçirimliliği, ortalama rakım kotu $\bar{Z}_i$) olarak modellenir.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- BÖLÜM 7: Z-SKORU NORMALİZASYONU -->
+    <!-- ============================================================ -->
+    <section id="zscore">
+      <h2>7. Çok Boyutlu Z-Skoru Matrisi ve Normalizasyon Matematiği</h2>
+      <p>
+        Farklı birimlerde ölçülen değişkenlerin (Metre cinsinden mesafe, Yüzde cinsinden $\text{TAKS}$, Adet cinsinden bina sayısı, Kat adedi) 
+        kümeleme algoritmasında eşit ölçekte ağırlıklandırılabilmesi için standartlaştırma zorunludur.
+      </p>
+      <p>Her bir aktif $k$ değişkeni için tüm hücreler üzerinde ortalama $\mu_k$ ve standart sapma $\sigma_k$ hesaplanır:</p>
+      <div class="math-block">
+        $$\mu_k = \frac{1}{N} \sum_{i=1}^N x_{ik}, \quad \sigma_k = \sqrt{\frac{1}{N} \sum_{i=1}^N (x_{ik} - \mu_k)^2}$$
+      </div>
+      <p>Varyansı sıfır olan ($\sigma_k < 10^{-9}$) sabit değişkenler matristen otomatik elenir. Z-skoru değeri aşırı aykırı değerlerin kümelemeyi bozmasını engellemek için $\pm 3.0$ aralığında kırpılır ($\text{clipping}$):</p>
+      <div class="math-block">
+        $$Z_{ik} = \max\left(-3.0, \, \min\left(3.0, \, \frac{x_{ik} - \mu_k}{\sigma_k}\right)\right)$$
+      </div>
+      
+      <h3>Boyutsal Ağırlıklandırma Vektörü</h3>
+      <p>Kullanıcının girdiği grup ağırlıkları ($w_{\text{lu}}, w_{\text{yapı}}, w_{\text{doğal}}, w_{\text{geo}}$) ilgili grubun değişken sayısına bölünerek kareköküyle normalize edilir:</p>
+      <div class="math-block">
+        $$V_{ik} = Z_{ik} \cdot \sqrt{\frac{W_{\text{grup}}}{M_{\text{grup}}}}$$
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- BÖLÜM 8: MEKÂNSAL WARD KÜMELEMESİ -->
+    <!-- ============================================================ -->
+    <section id="ward">
+      <h2>8. Mekânsal Kısıtlı Ward Kümeleme ve Kuhn-Munkres Matematiği</h2>
+      <p>
+        Ward's Hierarchical Agglomerative Clustering yöntemi, her birleşme adımında toplam varyans artışını (Kareler Toplamı Hatası - $\Delta \text{ESS}$) 
+        en küçükleyen çifti bularak ilerler. İki küme $a$ ve $b$ birleştiğinde öznitelik uzayındaki Ward mesafesi:
+      </p>
+      <div class="math-block">
+        $$\Delta \text{ESS}(a, b) = \frac{W_a \cdot W_b}{W_a + W_b} \cdot \sum_{k=1}^D (V_{ak} - V_{bk})^2$$
+      </div>
+      
+      <h3>Öncelik Kuyruğu ($\text{Min-Heap}$) Optimizasyonu</h3>
+      <p>
+        Algoritma başlangıçta $N$ adet hücreyi bağımsız birer küme kabul eder. 
+        Yalnızca komşuluk çizgesi $\mathcal{E}$ içinde olan kenarlar için maliyet hesaplanıp Min-Heap veri yapısına eklenir. 
+        Her adımda en küçük maliyetli kenar çekilir; $a$ ve $b$ birleştirilerek centroid güncellenir:
+      </p>
+      <div class="math-block">
+        $$V_{\text{yeni}} = \frac{W_a V_a + W_b V_b}{W_a + W_b}, \quad W_{\text{yeni}} = W_a + W_b, \quad \text{Alan}_{\text{yeni}} = \text{Alan}_a + \text{Alan}_b$$
+      </div>
+
+      <h3>Macar Algoritması ($\text{Kuhn-Munkres}$) ile Standart Profil Eşleştirmesi</h3>
+      <p>
+        Oluşan $K$ adet alt bölgenin standart gerekçe profilleriyle 
+        ($A_1 \dots A_{28}$ veya $M_1 \dots M_{28}$) eşleştirilmesi bir Bipartite Matching problemidir. 
+        Maliyet matrisi $C_{ij} = \text{MatchCost}(\text{Bölge}_i, \text{Profil}_j)$ üzerinden $\mathcal{O}(n^3)$ karmaşıklığındaki 
+        <b>Macar Algoritması</b> çalıştırılarak global minimum maliyetli optimal eşleşme bulunur:
+      </p>
+      <div class="math-block">
+        $$\min_{\pi} \sum_{i=1}^K C_{i, \pi(i)}, \quad C_{ij} = \|\bar{Z}_i - P_j^{\text{hedef}}\|_2$$
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- BÖLÜM 9: AÇIKLANABİLİR YAPAY ZEKA (XAI) -->
+    <!-- ============================================================ -->
+    <section id="xai">
+      <h2>9. Açıklanabilir Mekânsal Yapay Zeka (XAI) ve Dinamik Sınır Ayrım Gerekçesi</h2>
+      <p>
+        Klasik kümeleme araçları sadece bölgeleri renklendirir; ancak plancıya <i>"Neden bu iki bölge birbirinden ayrıldı?"</i> 
+        sorusunun yanıtını veremez. Eklenti, <b>Açıklanabilir Mekânsal Karar Destek (Explainable Spatial AI)</b> modülü içerir.
+      </p>
+      <p>Her alt bölge $z_i$ için alan ağırlıklı ortalama Z-vektörü $\bar{Z}_i$ saklanır. İki sınır komşusu bölge ($z_i$ ve $z_j$) arasındaki mutlak Z-skoru fark vektörü hesaplanır:</p>
+      <div class="math-block">
+        $$|\Delta Z_{ij}^k| = |\bar{Z}_{i,k} - \bar{Z}_{j,k}|, \quad \forall k \in \mathcal{K}_{\text{aktif}} \setminus \{\text{Coğrafi Koordinatlar}\}$$
+      </div>
+      <div class="callout">
+        <b>Kural 5 Algoritması:</b> İki komşu bölge arasında en yüksek $|\Delta Z|$ değerine sahip 
+        <b>ilk 3 farklı değişken boyutu</b> (Örn: $\text{TAKS}$ sıçraması, Kat adedi farkı, Eğim farkı veya Kötü yapı oranı farkı) 
+        dinamik olarak seçilir ve resmi Türkçe cümle formatına dönüştürülür:
+        <br><br>
+        <i>"Komşu bölgelerden ($A_3, A_5$) $Z$-skoru matrisinde en yüksek farkı oluşturan ilk 3 aktif değişkene göre ayrılmıştır: 
+        1) $\text{TAKS}$ yoğunluk farkı ($\%34.2$ vs $A_3$'te $\%18.5$) [$\Delta Z = 1.82$]; 
+        2) alan ağırlıklı kat yüksekliği farkı ($4.1\text{ kat}$ vs $A_5$'te $2.0\text{ kat}$) [$\Delta Z = 1.45$]; 
+        3) dereye uzaklık farkı ($45\text{ m}$ vs $A_5$'te $320\text{ m}$) [$\Delta Z = 1.12$]."</i>
+      </div>
+    </section>
+
+  </div>
+
+  <footer>
+    <div>Dokuz Eylül Üniversitesi, Mimarlık Fakültesi, Şehir ve Bölge Planlama Bölümü</div>
+    <div>Sayısal Planlama & Mekânsal Karar Destek Aracı · v1.1.0</div>
+  </footer>
+</div>
+
+</body>
+</html>

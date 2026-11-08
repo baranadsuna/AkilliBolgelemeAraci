@@ -1,0 +1,22 @@
+KENTSEL BOLGELEME VE KIRILGANLIK ANALIZ ARACI v9.0 — Gelistirici: Baran Adsuna
+
+KURULUM: QGIS > Eklentiler > Eklentileri Yonet ve Kur > ZIP'ten Kur > bu zip dosyasi.
+
+YENILIKLER (v9.0):
+  1) NUFUS VERISI GIRISI (OTOMATIK VEYA ELLE MANUEL):
+     1. sekmedeki 'C. Nufus Verisi Girisi' bolumunden ister katmandaki nufus sutununu otomatik
+     kullanabilir, ister calisma alaninin toplam nufusunu elle girerek (konut insaat alani ve kat
+     yogunluguna gore otomatik dagitilir) analizlere dahil edebilirsiniz.
+  2) OPSIYONEL TEKIL YAPILAR / BINALAR KATMANI:
+     1. sekmedeki 'B. Opsiyonel Tekil Yapilar / Binalar Katmani' kutucugunu isaretleyerek ayri bir
+     yapi katmani ekleyebilirsiniz. Eklendiginde TAKS, bina sayisi, kat adedi, yapi nizami ve
+     yapi fiziksel durumu dogrudan bu yapilar uzerinden gercek olarak hesaplanir.
+  3) SIFIR SENTETIK VERI — HER GIRDI KUMELEME MATRISINI DOGRUDAN ETKILER:
+     Eklenen tum katmanlar ve sutunlar (arazi kullanimi, TAKS, kat, nizam, kotu durumdaki yapi orani,
+     nufus yogunlugu, yol genisligi/kaplamasi/kademesi, egim ve dogal esikler) Z-skoru matrisine
+     gercek olcum olarak girer.
+  4) 'NEDEN BIRLESTI / NEDEN KOMSUSUNDAN AYRILDI?' SINIR GEREKCESI:
+     Her alt bolgenin sadece kendi icinde neden birlestigini degil, sinir komsusu oldugu diger
+     alt bolgelerden hangi somut farkla (fonksiyon, TAKS sicramasi, kat farki, nizam, egim, dere/fay
+     uzakligi veya nufus yogunlugu farki) ayrildigini hesaplar ve 'Komsu_Bolgelerden_Ayrim_Nedeni'
+     sutununa yazar.

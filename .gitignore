@@ -1,0 +1,18 @@
+# Python & QGIS artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+*.tmp
+*.bak
+
+# Temporary Spatial / SQLite Locks
+*.gpkg-shm
+*.gpkg-wal
+*.qix
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
