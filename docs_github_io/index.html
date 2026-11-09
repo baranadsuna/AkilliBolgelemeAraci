@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AkilliBolgelemeAraci (v1.1.0) — Academic Methodology &amp; Operational Guide</title>
+  <title>AkilliBolgelemeAraci (v1.8.1) - Academic Methodology &amp; Operational Guide</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous" />
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"
@@ -11,11 +11,13 @@
   <style>
     :root {
       --bg: #0b1120;
+      --surface: #111827;
       --card: #1e293b;
       --border: #334155;
       --text: #f8fafc;
       --muted: #94a3b8;
       --accent: #38bdf8;
+      --accent-strong: #0284c7;
       --emerald: #10b981;
       --amber: #f59e0b;
     }
@@ -23,70 +25,59 @@
     body {
       margin: 0;
       font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-      background: var(--bg);
+      background-color: var(--bg);
       color: var(--text);
-      line-height: 1.68;
+      line-height: 1.65;
     }
     header {
-      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 58%, #0284c7 100%);
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #0369a1 100%);
       border-bottom: 1px solid var(--border);
-      padding: 3rem 1.5rem 2.5rem;
+      padding: 3rem 1.5rem 2.25rem;
     }
-    .container { max-width: 1140px; margin: 0 auto; }
-    .badge-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .badge-row { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1rem; }
     .badge {
-      font-size: 0.76rem; font-weight: 700; text-transform: uppercase;
-      padding: 0.3rem 0.75rem; border-radius: 999px;
-      background: rgba(15, 23, 42, 0.72); border: 1px solid rgba(148, 163, 184, 0.35);
-      color: #e2e8f0;
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+      padding: 0.35rem 0.75rem; border-radius: 999px;
+      background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(148, 163, 184, 0.35); color: #e2e8f0;
     }
     .badge.crs { border-color: var(--emerald); color: #6ee7b7; }
-    h1 { margin: 0 0 0.6rem; font-size: 2.2rem; }
-    h2 {
-      margin-top: 2.5rem; padding-bottom: 0.45rem;
-      border-bottom: 1px solid var(--border); color: #f1f5f9;
-    }
-    h3 { color: #7dd3fc; margin-top: 1.35rem; margin-bottom: 0.5rem; }
-    main { padding: 2rem 1.5rem 4rem; }
+    .badge.qt { border-color: var(--accent); color: #7dd3fc; }
+    h1 { margin: 0 0 0.5rem; font-size: 2.15rem; font-weight: 800; }
+    h2 { font-size: 1.5rem; margin-top: 2.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+    h3 { font-size: 1.15rem; margin-top: 1.25rem; color: var(--accent); }
     .panel {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 10px; padding: 1.35rem; margin: 1.1rem 0;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.75rem; margin-bottom: 2rem;
     }
     .math-block {
-      background: rgba(15, 23, 42, 0.85); border-left: 4px solid var(--accent);
-      padding: 1rem 1.25rem; border-radius: 6px; overflow-x: auto; margin: 0.85rem 0;
+      background: #0f172a; border-left: 4px solid var(--accent);
+      padding: 1rem 1.25rem; margin: 1rem 0; border-radius: 4px; overflow-x: auto;
     }
     .invariant-grid {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 1.15rem; margin-top: 1rem;
+      gap: 1.25rem; margin-bottom: 2rem;
     }
     .invariant-card {
       background: var(--card); border: 1px solid var(--border);
-      border-top: 3px solid var(--emerald); border-radius: 10px; padding: 1.2rem;
+      border-radius: 8px; padding: 1.25rem;
     }
+    .invariant-card h3 { margin-top: 0; color: #38bdf8; font-size: 1.05rem; }
     .screenshot-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
-      gap: 1.35rem; margin-top: 1.25rem;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(520px, 1fr));
+      gap: 1.5rem; margin: 1.5rem 0 2.5rem;
     }
-    figure {
-      margin: 0; background: var(--card); border: 1px solid var(--border);
-      border-radius: 10px; padding: 1rem;
-    }
-    figure img { width: 100%; height: auto; border-radius: 6px; border: 1px solid #475569; }
-    figcaption { margin-top: 0.65rem; font-size: 0.88rem; color: var(--muted); }
-    table { width: 100%; border-collapse: collapse; margin: 1rem 0; background: var(--card); font-size: 0.9rem; }
-    th, td { padding: 0.75rem 0.9rem; border: 1px solid var(--border); text-align: left; vertical-align: top; }
-    th { background: #0f172a; color: #93c5fd; }
+    figure { margin: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    figure img { width: 100%; display: block; border-bottom: 1px solid var(--border); }
+    figcaption { padding: 0.85rem 1rem; font-size: 0.85rem; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.9rem; }
+    th, td { padding: 0.75rem 1rem; border: 1px solid var(--border); text-align: left; }
+    th { background: var(--card); color: #e2e8f0; }
+    tr:nth-child(even) { background: rgba(30, 41, 59, 0.4); }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
-    code {
-      font-family: 'Consolas', monospace; background: rgba(15, 23, 42, 0.85);
-      padding: 0.15rem 0.4rem; border-radius: 4px; color: #7dd3fc; font-size: 0.88em;
-    }
-    footer {
-      border-top: 1px solid var(--border); padding: 2rem 1.5rem;
-      text-align: center; color: var(--muted); font-size: 0.88rem;
-    }
+    footer { border-top: 1px solid var(--border); padding: 2rem 1.5rem; text-align: center; color: var(--muted); font-size: 0.85rem; }
   </style>
 </head>
 <body>
@@ -94,14 +85,15 @@
 <header>
   <div class="container">
     <div class="badge-row">
-      <span class="badge">Plugin: AkilliBolgelemeAraci v1.1.0</span>
+      <span class="badge">Plugin: AkilliBolgelemeAraci v1.8.1</span>
       <span class="badge crs">Standard CRS: EPSG:5253 (TUREF / TM30)</span>
-      <span class="badge">QGIS 3.x &amp; 4.x (supportsQt6=True)</span>
+      <span class="badge qt">QGIS 3.22 – 4.99+ (supportsQt6=True)</span>
+      <span class="badge">Flake8 Clean &amp; QGIS Hub Approved</span>
       <span class="badge">5 Verified Academic DOIs</span>
     </div>
-    <h1>Akıllı Bölgeleme Aracı — Urban Sub-Zoning &amp; Spatial Decision Support</h1>
-    <p style="max-width:880px; color:#cbd5e1; margin:0;">
-      Academic methodology and operational reference for street-block morphological cellularization, multi-criteria Z-score standardization, adjacency-constrained Ward minimum variance clustering, 3D vulnerability synthesis, and automated urban intervention profiling.
+    <h1>Akıllı Bölgeleme Aracı — Urban Zoning &amp; Vulnerability Analysis Tool</h1>
+    <p style="max-width:920px; color:#cbd5e1; margin:0;">
+      Academic methodology and operational guide for spatial contiguity-constrained Ward clustering, advanced boundary compactness, macro-zone area cap exemptions, calibrated residential block population distribution, and 3D disaster vulnerability synthesis.
     </p>
   </div>
 </header>
@@ -113,7 +105,7 @@
   <div class="panel">
     <h3>1.1 Street-Block Morphological Cellularization &amp; Sliver Filtering (<code>analiz.py :: build_cells_from_roads</code>)</h3>
     <p>
-      To avoid the Modifiable Areal Unit Problem (MAUP) inherent in arbitrary grids, the study boundary and road centerlines are topologically noded via <code>QgsGeometry.unaryUnion</code> and polygonized into street-bounded urban cells. Road medians, traffic islands, and sliver polygons lacking real building footprints are detected via Polsby-Popper compactness $PP$ and morphological thickness $T$:
+      To resolve the Modifiable Areal Unit Problem (MAUP) without arbitrary grids, study boundaries and road network lines are topologically noded via <code>QgsGeometry.unaryUnion</code> and polygonized into street-bounded urban cells. Road medians and sliver polygons lacking real buildings are detected via Polsby-Popper compactness $PP$ and morphological thickness $T$:
     </p>
     <div class="math-block">
       $$PP(c) = \frac{4\pi A_c}{P_c^2}, \qquad T(c) = \frac{2 A_c}{P_c}$$
@@ -122,104 +114,109 @@
       Cells without building blocks satisfying $A_c &lt; 450\text{ m}^2$, $PP(c) &lt; 0.10$, or $T(c) &lt; 14.0\text{ m}$ (or collapsing under inward morphological erosion of $-7.0\text{ m}$) are automatically absorbed into the adjacent urban block sharing the longest boundary edge.
     </p>
 
-    <h3>1.2 Winsorized Z-Score Standardization &amp; Thematic Group Weighting (<code>algoritma.py :: zscore_columns</code>)</h3>
+    <h3>1.2 Contiguity-Constrained Ward Agglomeration with Shape Compactness (<code>algoritma.py :: ward_merge</code>)</h3>
     <p>
-      Every active indicator column $x_{i,k}$ across $n$ cells is standardized to zero mean and unit variance, clipped to $[-3.0, +3.0]$ to prevent extreme single-parcel outliers from dominating variance, and scaled by its thematic group weight $W_g \in \{W_{\text{lu}}, W_{\text{yapi}}, W_{\text{dogal}}, W_{\text{geo}}\}$:
+      Following <strong>Ward (1963)</strong> (<a href="https://doi.org/10.1080/01621459.1963.10500845">DOI: 10.1080/01621459.1963.10500845</a>), agglomeration merges contiguous clusters $(A, B) \in E_{\text{adj}}$ minimizing error sum of squares ($\Delta \text{ESS}$). In <strong>v1.8.0</strong>, the cost formulation incorporates boundary shape compactness $\Phi_{\text{geo}}$, macro-zone cohesion, and dynamic area-cap factor $\kappa(A, B)$:
     </p>
     <div class="math-block">
-      $$z_{i,k} = \text{clip}\!\left(\frac{x_{i,k} - \mu_k}{\sigma_k},\; -3.0,\; +3.0\right), \qquad \tilde{z}_{i,k} = z_{i,k} \cdot \sqrt{\frac{W_g}{|G_g|}}$$
-    </div>
-
-    <h3>1.3 Adjacency-Constrained Ward Minimum Variance Clustering (<code>algoritma.py :: ward_merge</code>)</h3>
-    <p>
-      Following <strong>Ward (1963)</strong> (<a href="https://doi.org/10.1080/01621459.1963.10500845">DOI: 10.1080/01621459.1963.10500845</a>), hierarchical agglomeration is restricted strictly to spatially contiguous clusters $(A, B) \in E_{\text{adj}}$ sharing a boundary segment $> 1.0\text{ m}$. Each cell is initialized with weight $W_i = \sqrt{A_i}$, and the priority-queue merge cost incorporates an area-balance penalty ($C_{\text{area}} = \frac{\sum A_i}{K}\cdot m_{\text{cap}}$, $p=2.0$, $\varepsilon=0.05$):
-    </p>
-    <div class="math-block">
-      $$\Delta \text{ESS}(A, B) = \frac{W_A W_B}{W_A + W_B}\left(\sum_{k=1}^{D} (\bar{z}_{A,k} - \bar{z}_{B,k})^2 + \varepsilon\right) \cdot \left(1 + \left(\frac{\text{Area}_A + \text{Area}_B}{C_{\text{area}}}\right)^2\right)$$
+      $$\Delta \text{ESS}(A, B) = \frac{W_A W_B}{W_A + W_B}\left(\sum_{k=1}^{D} (\bar{z}_{A,k} - \bar{z}_{B,k})^2 + \varepsilon\right) \cdot \Phi_{\text{affinity}}(A, B) \cdot \left(1 + \kappa(A, B) \left(\frac{\text{Area}_A + \text{Area}_B}{C_{\text{area}}}\right)^p\right)$$
     </div>
     <p>
-      Upon merging cluster $B$ into $A$, the centroid feature vector updates deterministically via $\bar{\mathbf{z}}_{A \cup B} = \frac{W_A \bar{\mathbf{z}}_A + W_B \bar{\mathbf{z}}_B}{W_A + W_B}$.
+      where:
+      <ul>
+        <li><strong>Macro-Zone Area Cap Exemption:</strong> When clusters $A$ and $B$ are both industrial ($\text{san} \ge 0.35$) or agricultural ($\text{tar} \ge 0.60$), $\kappa(A, B) = 0.0$ and $\Phi_{\text{affinity}} = 0.04$, allowing massive industrial estates (OIZ) and agricultural plains to remain unified into large coherent blocks without artificial splitting.</li>
+        <li><strong>Industrial-Residential Strict Isolation:</strong> When industry borders residential fabric ($\text{san}_A \ge 0.30$ and $\text{kon}_B \ge 0.20$), $\Phi_{\text{affinity}} = 45.0$, strictly preventing industry from encroaching into residential zones.</li>
+        <li><strong>Facility Deficit Scaling:</strong> In dense residential zones with severe facility shortages ($\text{donati} &lt; 6\%$), $\kappa(A, B) = 2.4$, keeping neighborhood zones smaller and focused so planning deficits are visibly highlighted.</li>
+        <li><strong>Boundary Elongation &amp; Throat Penalty:</strong> If the shared boundary $L_{\text{shared}} &lt; 10\text{ m}$, cost increases by $(1 + 3.5 \cdot w_{\text{geo}})$, preventing thin winding road corridor tails (such as narrow north-south strips).</li>
+      </ul>
     </p>
 
-    <h3>1.4 Hungarian Bipartite Profile Matching (<code>algoritma.py :: hungarian</code>)</h3>
+    <h3>1.3 3D Disaster Vulnerability Framework (<code>analiz.py :: compute_vulnerability</code>)</h3>
     <p>
-      To assign each emergent zone $i \in \{1,\dots,K\}$ to a unique urban planning archetype $j \in \{A_1,\dots,A_{28}\}$ (or advanced intervention profiles $\{M_1,\dots,M_{28}\}$), the plugin constructs a feature-and-cardinal-direction cost matrix $C_{i,j}$ and solves the global minimum-cost bipartite assignment in $O(K^3)$ time via the <strong>Kuhn (1955)</strong> Hungarian algorithm (<a href="https://doi.org/10.1002/nav.3800020109">DOI: 10.1002/nav.3800020109</a>).
-    </p>
-
-    <h3>1.5 3D Disaster Vulnerability Framework: Exposure, Sensitivity, Adaptive Capacity (<code>analiz.py :: compute_vulnerability</code>)</h3>
-    <p>
-      Grounded in the sustainability vulnerability framework of <strong>Turner et al. (2003)</strong> (<a href="https://doi.org/10.1073/pnas.1231335100">DOI: 10.1073/pnas.1231335100</a>), seismic and flood vulnerability indices ($V_{\text{seismic}}, V_{\text{flood}} \in [1, 5]$) combine Exposure ($E$), physical/morphological Sensitivity ($S$), and spatial/accessibility Adaptive Capacity ($AC$):
+      Grounded in the sustainability science framework of <strong>Turner et al. (2003)</strong> (<a href="https://doi.org/10.1073/pnas.1231335100">DOI: 10.1073/pnas.1231335100</a>), seismic and flood vulnerability combine Exposure ($E$), physical Sensitivity ($S$), and Adaptive Capacity ($AC$):
     </p>
     <div class="math-block">
       $$E = 0.6\,e_{\text{pop\_dens}} + 0.4\,e_{\text{bldg\_count}}, \qquad V_{\text{seismic}} = \frac{E \times S_{\text{seismic}}}{\max(1.0,\, AC_{\text{seismic}})}, \qquad V_{\text{flood}} = \frac{E \times S_{\text{flood}}}{\max(1.0,\, AC_{\text{flood}})}$$
       $$V_{\text{total}} = 0.6\,V_{\text{seismic}} + 0.4\,V_{\text{flood}}$$
     </div>
-    <p>
-      where facility accessibility components integrate Two-Step Floating Catchment Area (2SFCA) supply-to-demand principles (<strong>Luo &amp; Wang, 2003</strong>, <a href="https://doi.org/10.1068/b29120">DOI: 10.1068/b29120</a>) and street-network axial/segment integration concepts (<strong>Hillier et al., 1976</strong>, <a href="https://doi.org/10.1068/b030147">DOI: 10.1068/b030147</a>).
-    </p>
   </div>
 
-  <h2>2. The Five Methodological Invariants (Zero-Distortion Urban Rules)</h2>
+  <h2>2. Six Methodological Invariants (Zero-Distortion Urban Rules)</h2>
   <div class="invariant-grid">
     <div class="invariant-card">
       <h3>Invariant 1: Industrial &amp; Agricultural Zero-Population Rule</h3>
       <p>
-        Implemented in <code>cell_residential_weight</code> and <code>apply_population_settings</code>. Cells and zones dominated by industrial/storage (<code>lu_sanayi &ge; 0.45</code>, e.g., OSB Zone A28) or agricultural/open land (<code>lu_tarim &ge; 0.70</code>) receive a strict population weight of $0.0$. Population is allocated exclusively to residential (<code>lu_konut</code>) and mixed commercial-residential ($w_{\text{konut}} + 0.35\,w_{\text{ticaret}}$) fabrics.
+        Industrial/storage ($\text{sanayi} \ge 0.45$) and agricultural/cemetery zones receive a strict resident population of $0$. Total population is distributed exclusively across residential and mixed commercial-residential blocks weighted by building count, parcel area, and story height.
       </p>
     </div>
     <div class="invariant-card">
       <h3>Invariant 2: TAKS &lt; 5% Open-Space Order Safeguard</h3>
       <p>
-        Implemented in <code>zone_stats</code>. Whenever a sub-zone exhibits building coverage $\text{TAKS} &lt; 5\%$ or agricultural/open ratio $&gt; 70\%$, it is never misclassified as <em>"Bitişik Nizam"</em> (Attached Order). Instead, its attached ratio is forced to $0.0$ and its morphological label is set to <code>"Yapısız / Açık Alan"</code> ($\text{TAKS} &lt; 1.5\%$) or <code>"Seyrek Kırsal Doku"</code>.
+        Sub-zones exhibiting building coverage $\text{TAKS} &lt; 5\%$ or open/agricultural ratio $&gt; 70\%$ are never mislabeled as <em>Attached Order</em>; they are strictly classified as <code>"Yapısız / Açık Alan"</code> or <code>"Seyrek Kırsal Doku"</code>.
       </p>
     </div>
     <div class="invariant-card">
-      <h3>Invariant 3: Footprint-Weighted Floor Average</h3>
+      <h3>Invariant 3: Macro-Zone Cohesion ("Büyük Alanlar Baba Olsun")</h3>
       <p>
-        Implemented in <code>accumulate_polygons</code>. Mean floor count is computed as the building-footprint-weighted mean $\bar{K}_z = \frac{\sum K_i A_{\text{bldg},i}}{\sum A_{\text{bldg},i}}$, preventing isolated multi-story structures in sparse rural blocks from inflating sub-zone story averages.
+        Organized Industrial Zones (OIZ) and wide fertile agricultural plains are exempt from arbitrary cluster size ceilings, preserving their continuous macro-scale spatial integrity while keeping urban residential neighborhoods appropriately subdivided.
       </p>
     </div>
     <div class="invariant-card">
-      <h3>Invariant 4: Explicit Heritage, Risk &amp; Dilapidation Tracking</h3>
+      <h3>Invariant 4: Geometric Compactness &amp; Tail Elimination</h3>
       <p>
-        Implemented in <code>get_extra_Sit_params</code> and <code>describe_concise</code>. Poor building stock share (<code>yapi:kotu_yapi</code> %), registered heritage area share (<code>sit2</code> %), and disaster-risk/renewal boundary share (<code>sit3</code> %) are explicitly tracked in the Z-matrix, attribute table, and narrative summaries.
+        Agglomeration strictly penalizes narrow throat junctions ($L_{\text{shared}} &lt; 10\text{ m}$) and high bounding aspect ratios, eradicating long winding corridor tails and ensuring all planning zones have cohesive, well-proportioned polygons.
       </p>
     </div>
     <div class="invariant-card">
-      <h3>Invariant 5: Top-3 $|\Delta Z|$ Dynamic Boundary Justification</h3>
+      <h3>Invariant 5: Decoupled Natural Barriers</h3>
       <p>
-        Implemented in <code>build_contrast_explanation</code>. Rather than static distance templates, each sub-zone's boundary separation rationale (<code>Komsu_Bolgelerden_Ayrim_Nedeni</code>) dynamically ranks the top 3 non-coordinate variables with the largest absolute standardized difference $|\bar{Z}_{A,k} - \bar{Z}_{B,k}|$ against adjacent zones.
+        Social and technical facilities (schools, healthcare centers, public parks) are decoupled from the Natural Thresholds table, ensuring natural barriers (faults, streams, floodplains, DEM slope) function purely as physical/environmental constraints.
+      </p>
+    </div>
+    <div class="invariant-card">
+      <h3>Invariant 6: Top-3 $|\Delta Z|$ Dynamic Boundary Justification</h3>
+      <p>
+        Each sub-zone's boundary rationale dynamically ranks the top 3 non-coordinate variables with the largest absolute standardized difference $|\bar{Z}_{A,k} - \bar{Z}_{B,k}|$ against adjacent zones, providing transparent and verifiable spatial explanations.
       </p>
     </div>
   </div>
 
-  <h2>3. Step-by-Step GUI Workflow (Real PyQGIS Widget Captures)</h2>
-  <p style="color:#cbd5e1;">
-    The screenshots below are captured directly from the live <code>BolgelemeDialog</code> PyQGIS widget in QGIS 3.44.14 LTR.
-  </p>
+  <h2>3. Step-by-Step GUI Workflow (Live PyQGIS v1.8.0 Captures)</h2>
   <div class="screenshot-grid">
     <figure>
-      <img src="assets/gui_step1_main_dialog.png" alt="AkilliBolgelemeAraci Step 1 Main Dialog in PyQGIS" />
+      <img src="assets/gui_zoning_presets_v18.png" alt="Zoning Strategies and Parameter Weights Tab" />
       <figcaption>
-        <strong>Stage 1 — Layer Binding, Population Mode &amp; Multi-Criteria Weights:</strong> Selecting the study boundary, road network, building blocks, DEM raster, natural/institutional threshold layers (<code>dere</code>, <code>fay</code>, <code>sit</code>, <code>donati</code>), and configuring thematic group weights in <code>BolgelemeDialog</code>.
+        <strong>Tab 3 — 8 One-Click Zoning Strategy Presets &amp; Planner-Oriented Weights:</strong> Quick presets (Integrated Planning Synthesis, Vacant Land Potential, Facility Accessibility, Agricultural Protection, Commercial Core, Industrial Cohesion, Disaster Risk) with intuitive fine-tuning controls.
       </figcaption>
     </figure>
     <figure>
-      <img src="assets/gui_step2_advanced_mode.png" alt="AkilliBolgelemeAraci Step 2 Advanced Mode &amp; Synthesis Output" />
+      <img src="assets/gui_natural_thresholds_v18.png" alt="Natural Thresholds &amp; DEM Tab" />
       <figcaption>
-        <strong>Stage 2 — Advanced Intervention Atlas (M1–M28) &amp; Top-3 $|\Delta Z|$ Diagnostics:</strong> Executing the 7-stage spatial pipeline, inspecting the generated sub-zone attribute matrix, 3D vulnerability tiers, and exporting the orphan-free analysis tracking matrix (CSV).
+        <strong>Tab 2 — Natural Thresholds &amp; Protected Areas:</strong> Dedicated natural barrier scanner detecting stream channels, active seismic faults, protected heritage (Sit) areas, and DEM slope raster without facility clutter.
+      </figcaption>
+    </figure>
+    <figure>
+      <img src="assets/gui_quick_view_v18.png" alt="Quick Plain Summary View" />
+      <figcaption>
+        <strong>Tab 4 — Quick Plain Summary View:</strong> Instant executive reading of sub-zone land-use shares, vacant land ratio, facility walking access distance, active fault distance, DEM slope, TAKS density, and resident population.
+      </figcaption>
+    </figure>
+    <figure>
+      <img src="assets/gui_combined_view_v18.png" alt="Combined Executive and Technical Verification View" />
+      <figcaption>
+        <strong>Tab 4 — Combined View:</strong> Side-by-side presentation of canonical planning typology (character, narrative, planning decision, 1/5000 &amp; 1/1000 plan equivalent) and detailed Top-3 $|\Delta Z|$ verification diagnostics.
       </figcaption>
     </figure>
   </div>
 
-  <h2>4. Verified Academic References</h2>
+  <h2>4. Verified Academic Literature References</h2>
   <table>
     <thead>
       <tr>
         <th>Citation</th>
         <th>Title &amp; Journal</th>
         <th>Verified DOI</th>
-        <th>Role in Plugin</th>
+        <th>Algorithmic Role</th>
       </tr>
     </thead>
     <tbody>
@@ -233,25 +230,25 @@
         <td><strong>Kuhn, H. W.</strong> (1955)</td>
         <td><em>The Hungarian method for the assignment problem</em>, Naval Research Logistics Quarterly, 2(1–2), 83–97.</td>
         <td><a href="https://doi.org/10.1002/nav.3800020109" target="_blank" rel="noopener">10.1002/nav.3800020109</a></td>
-        <td>Optimal 1-to-1 zone-to-archetype assignment (<code>hungarian</code>)</td>
+        <td>Optimal zone-to-archetype matching (<code>hungarian</code>)</td>
       </tr>
       <tr>
         <td><strong>Turner, B. L. et al.</strong> (2003)</td>
         <td><em>A framework for vulnerability analysis in sustainability science</em>, PNAS, 100(14), 8074–8079.</td>
         <td><a href="https://doi.org/10.1073/pnas.1231335100" target="_blank" rel="noopener">10.1073/pnas.1231335100</a></td>
-        <td>3D Exposure ($E$), Sensitivity ($S$), and Adaptive Capacity ($AC$) synthesis (<code>compute_vulnerability</code>)</td>
+        <td>3D Exposure ($E$), Sensitivity ($S$), Adaptive Capacity ($AC$) vulnerability synthesis</td>
       </tr>
       <tr>
         <td><strong>Luo, W. &amp; Wang, F.</strong> (2003)</td>
-        <td><em>Measures of Spatial Accessibility to Health Care in a GIS Environment: Synthesis and a Case Study in the Chicago Region</em>, Environment and Planning B, 30(6), 865–884.</td>
+        <td><em>Measures of Spatial Accessibility to Health Care in a GIS Environment</em>, Environment and Planning B, 30(6), 865–884.</td>
         <td><a href="https://doi.org/10.1068/b29120" target="_blank" rel="noopener">10.1068/b29120</a></td>
-        <td>2SFCA social infrastructure deficit and adaptive capacity parameterization</td>
+        <td>2SFCA social facility deficit and accessibility parameterization</td>
       </tr>
       <tr>
         <td><strong>Hillier, B. et al.</strong> (1976)</td>
         <td><em>Space syntax</em>, Environment and Planning B: Planning and Design, 3(2), 147–185.</td>
         <td><a href="https://doi.org/10.1068/b030147" target="_blank" rel="noopener">10.1068/b030147</a></td>
-        <td>Street-network hierarchy, morphological street-block framing, and centrality</td>
+        <td>Street-network topology, morphological block framing, and centrality metrics</td>
       </tr>
     </tbody>
   </table>
@@ -260,7 +257,7 @@
 
 <footer>
   <div class="container">
-    Author: <strong>Baran Adsuna</strong> (<a href="https://github.com/baranadsuna">github.com/baranadsuna</a>) • <a href="../../../06_github_io_dokumantasyon_merkezi/index.html">Back to Master Documentation Center</a>
+    Author: <strong>Baran Adsuna</strong> (<a href="https://github.com/baranadsuna">github.com/baranadsuna</a>) • Dokuz Eylül University, Department of Urban and Regional Planning
   </div>
 </footer>
 

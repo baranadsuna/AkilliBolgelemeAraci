@@ -10,7 +10,8 @@ from qgis.PyQt.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QTabWidget, QWidget, QLabel, QPushButton, QSpinBox,
     QDoubleSpinBox, QCheckBox, QGroupBox, QFormLayout, QTableWidget, QTableWidgetItem,
     QHeaderView, QProgressBar, QTextEdit, QMessageBox, QAbstractItemView, QFileDialog,
-    QComboBox, QApplication, QFrame, QScrollArea, QRadioButton, QButtonGroup, QSizePolicy, QLineEdit
+    QComboBox, QApplication, QFrame, QScrollArea, QRadioButton, QButtonGroup, QSizePolicy, QLineEdit,
+    QSlider
 )
 from qgis.gui import QgsMapLayerComboBox, QgsFieldComboBox
 from qgis.core import (
@@ -29,6 +30,7 @@ PointingHandCursor = getattr(Qt.CursorShape, "PointingHandCursor", getattr(Qt, "
 AlignLeft = getattr(Qt.AlignmentFlag, "AlignLeft", getattr(Qt, "AlignLeft", 1))
 AlignVCenter = getattr(Qt.AlignmentFlag, "AlignVCenter", getattr(Qt, "AlignVCenter", 128))
 WaitCursor = getattr(Qt.CursorShape, "WaitCursor", getattr(Qt, "WaitCursor", None))
+OrientationHorizontal = getattr(Qt.Orientation, "Horizontal", getattr(Qt, "Horizontal", 1))
 
 _Policy = getattr(QSizePolicy, "Policy", QSizePolicy)
 PolicyExpanding = getattr(_Policy, "Expanding", getattr(QSizePolicy, "Expanding", 7))
@@ -348,17 +350,12 @@ ROAD_FIELD_DEFS = [
 
 NATURAL_LAYER_RULES = [
     ("dere", "Dere / Akarsu Yatağı", ("dere", "akarsu", "nehir", "cay", "su_yolu", "kanal", "vadisi", "hidroloji")),
-    ("fay", "Diri Fay Hattı", ("fay", "fault", "deprem", "diri_fay", "kiri")),
-    ("sit", "Sit / Koruma Alanı", ("sit", "koruma", "tescil", "arkeoloji", "kentsel_sit", "dogal_sit", "anit")),
-    ("risk", "Taşkın / Afet Risk Alanı", ("taskin", "sel", "risk", "heyelan", "afete_maruz", "sakincali", "jeoloji")),
-    ("donati", "Sosyal ve Teknik Donatı", ("donati", "okul", "egitim", "park", "yesil", "cami", "resmi", "sosyal", "kult", "spor")),
-    ("toplanma", "Afet Toplanma Alanı", ("toplanma", "acil_toplanma")),
-    ("saglik", "Sağlık Tesisi", ("saglik", "hastane", "asm", "poliklinik")),
-    ("syntax", "Space Syntax (NAIN/NACH)", ("syntax", "nain", "nach", "entegrasyon", "choice", "integration", "erisim")),
-    ("donati_erisim", "2SFCA Donatı Erişimi / Aşırı Yükleme", ("2sfca", "fca", "overload", "erisim_acigi", "donati_baski")),
+    ("fay", "Diri Fay Hattı", ("diri_fay", "fay_hatti", "faylar", "fault", "seismic_fault", "aktif_fay", "fay_")),
+    ("sit", "Sit / Koruma Alanı", ("sit_alan", "tescilli_alan", "kentsel_sit", "dogal_sit", "arkeolojik_sit", "sit", "tescil", "koruma")),
+    ("risk", "Taşkın / Afet Risk Alanı", ("taskin", "sel_riski", "heyelan", "afete_maruz", "sakincali", "jeoloji")),
     ("lst", "Kentsel Isı Adası / LST", ("lst", "isi_adasi", "thermal", "sicaklik", "termal", "heat")),
     ("tarim", "Tarım / Ova Alanı", ("tarim", "ova", "buyukova", "mera", "ziraat")),
-    ("sanayi", "Sanayi / OSB Alanı", ("sanayi", "osb", "endustri", "depolama", "kss")),
+    ("sanayi", "Sanayi / OSB Çevre Kuşağı", ("sanayi", "osb", "endustri", "depolama", "kss")),
 ]
 
 
@@ -469,7 +466,7 @@ UI_TRANSLATIONS = {
         "lbl_per_bldg": "<b>Persons per Floor:</b>",
         "grp_d1": "D1. Urban Block Attributes (Auto-Matched)",
         "grp_d2": "D2. Road Network Attributes (Auto-Matched)",
-        "grp_e": "E. Natural Thresholds, Conservation Areas & Facilities",
+        "grp_e": "E. Natural Thresholds & Protected Areas",
         "btn_auto_nat": "⚡ Auto-Scan Natural Thresholds (Stream, Fault, Sit, DEM...)",
         "btn_add_row": "➕ Add Row",
         "btn_del_row": "🗑️ Remove Selected",
@@ -491,18 +488,18 @@ UI_TRANSLATIONS = {
         "p_yapi_d": "Separates blocks differing in TAKS, floor count, building order, poor structural condition, and population density.",
         "p_dogal_t": "4) Natural Threshold & Protection Weight",
         "p_dogal_d": "Isolates stream buffers, steep DEM slopes, active fault lines, and heritage (Sit) / flood risk areas.",
-        "p_geo_t": "5) Spatial Compactness Weight",
-        "p_geo_d": "Produces compact, cohesive neighborhood shapes and prevents long road-corridor strips.",
-        "p_cap_t": "6) Max Zone Area Cap Multiplier",
-        "p_cap_d": "Maximum allowed ratio of a sub-zone's area relative to the average sub-zone area.",
+        "p_geo_t": "5) Spatial Compactness & Cohesive Form Weight",
+        "p_geo_d": "Enforces cohesive, rounded/orthogonal zone shapes and strictly prevents long winding corridors or road strips.",
+        "p_cap_t": "6) Macro-Zone Cohesion & Area Cap",
+        "p_cap_d": "Prevents artificial splitting of massive industrial zones (OIZ) or continuous agricultural plains, keeping large functional areas unified.",
         "p_bos_t": "7) Vacant Land & New Plan Potential Weight",
         "p_bos_d": "Separates high-vacant-land reserve blocks (for drawing new plans) from fully built-up urban fabric.",
-        "p_erisim_t": "8) Facility & School Access (500m / 1000m) Weight",
-        "p_erisim_d": "Groups blocks with similar walking access to schools/parks/health (e.g., ~500m zone vs ~1000m zone).",
+        "p_erisim_t": "8) Facility Accessibility Weight",
+        "p_erisim_d": "Groups adjacent blocks sharing similar walking access to social and public facilities.",
         "p_yol_t": "9) Road Network Similarity Weight",
         "p_yol_d": "Groups neighboring blocks with similar road width, surface pavement, and street hierarchy.",
-        "p_odak_t": "10) Special Cluster Focus (Industry / Agri / Commercial)",
-        "p_odak_d": "Keeps industrial blocks cohesive without splitting, and highlights Industry-Residential / Industry-Agri transitions.",
+        "p_odak_t": "10) Industrial (OIZ) Cohesion & Isolation",
+        "p_odak_d": "Keeps industrial estates unified into massive, compact blocks and strictly isolates industry from encroaching into residential areas.",
         "p_grid_t": "11) Fallback Grid Size",
         "p_grid_d": "Default grid cell width used only when no road network layer is provided.",
         "grp_h": "H. Compact Geometry, Quick Summary Layer & Matching Options",
@@ -567,7 +564,7 @@ UI_TRANSLATIONS = {
         "lbl_per_bldg": "<b>Kat Başına Ortalama Kişi:</b>",
         "grp_d1": "D1. İmar Adası Öznitelikleri (Otomatik Eşleşir)",
         "grp_d2": "D2. Yol Ağı Öznitelikleri (Otomatik Eşleşir)",
-        "grp_e": "E. Doğal Eşikler, Koruma Alanları ve Donatılar",
+        "grp_e": "E. Doğal Eşikler ve Koruma Alanları",
         "btn_auto_nat": "⚡ Projedeki Doğal Eşikleri (Dere, Fay, Sit, DEM...) Otomatik Tara",
         "btn_add_row": "➕ Manuel Satır Ekle",
         "btn_del_row": "🗑️ Seçili Satırı Kaldır",
@@ -589,18 +586,18 @@ UI_TRANSLATIONS = {
         "p_yapi_d": "TAKS, kat adedi, yapı nizamı, kötü yapı oranı ve nüfus yoğunluğu farklı adaları ayırır.",
         "p_dogal_t": "4) Doğal Eşik ve Koruma Ağırlığı",
         "p_dogal_d": "Dere yatağı, eğimli topoğrafya, diri fay ve sit/risk alanlarını bağımsız bölge yapar.",
-        "p_geo_t": "5) Mekânsal Kompaktlık Ağırlığı",
-        "p_geo_d": "İnce uzun yol şeritleri yerine derli toplu ve kompakt mahalle geometrileri oluşturur.",
-        "p_cap_t": "6) Azami Alan Büyüklük Tavanı",
-        "p_cap_d": "Bir alt bölgenin ortalama bölge büyüklüğünün en fazla kaç katı olabileceğini belirler.",
+        "p_geo_t": "5) Mekânsal Kompaktlık & Derli Toplu Form Ağırlığı",
+        "p_geo_d": "Artırıldığında bölgeleri yuvarlak/kare ve derli toplu tutar; ince uzun yol şeritleri veya yılan gibi uzayan koridorları kesinlikle engeller.",
+        "p_cap_t": "6) Büyük Alan Bütünlüğü & Alan Tavanı",
+        "p_cap_d": "Sanayi (OSB) ve geniş ova tarım alanlarının suni bölünmesini önler; büyük makro alanların tek parça ('baba') kalmasını sağlar.",
         "p_bos_t": "7) Boş Arazi & Yeni Plan Potansiyeli Ağırlığı",
         "p_bos_d": "Üzerine yeni plan çizilecek boş arazisi çok olan rezerv alanlar ile dolu/yapılaşmış adaları net ayırır.",
-        "p_erisim_t": "8) Donatı & Okul Erişimi (500m / 1000m) Ağırlığı",
-        "p_erisim_d": "Okul ve donatılara benzer mesafede erişenleri gruplar (ör: M1'de ~500m erişenler, M2'de ~1000m erişenler).",
+        "p_erisim_t": "8) Donatı Alanlarına Erişim Ağırlığı",
+        "p_erisim_d": "Donatı alanlarına (okul, sağlık, park vb.) erişim durumu benzer olan komşu adaları bir arada gruplar.",
         "p_yol_t": "9) Yol Ağı Benzerliği (Genişlik/Kaplama) Ağırlığı",
         "p_yol_d": "Birbirine yakın ve yol genişliği, kaplama türü ile yol kademesi benzer olan adaları birleştirir.",
-        "p_odak_t": "10) Sanayi Bütünlüğü & Geçiş / Odak Çarpanı",
-        "p_odak_d": "Sanayi alanlarının parçalanmasını önler; sanayi-konut ve sanayi-tarım yakınlık geçişlerini gözetir.",
+        "p_odak_t": "10) Sanayi (OSB) Bütünlüğü ve İzolasyonu",
+        "p_odak_d": "Sanayi alanlarını parçalamadan tek parça ve son derece kompakt tutar; sanayinin konutla karışmasını ve araya sızmasını engeller.",
         "p_grid_t": "11) Yedek Izgara Boyutu",
         "p_grid_d": "Yol ağı katmanı verilmediğinde kullanılacak varsayılan ızgara hücre genişliği.",
         "grp_h": "H. Kompakt Geometri, Hızlı Özet Katmanı ve Eşleştirme Seçenekleri",
@@ -684,21 +681,21 @@ UI_TRANSLATIONS = {
 ZONING_PRESETS = [
     {
         "code": "integrated_synthesis",
-        "title_en": "1) Integrated Planning & Vulnerability Synthesis (Recommended: Vacant Land + 500 m / 1000 m Access + Roads + Industrial Cohesion)",
-        "title_tr": "1) Bütünleşik Planlama ve Kırılganlık Sentezi (Önerilen: Boş Arazi + 500 m / 1000 m Erişim + Yol + Sanayi Bütünlüğü)",
+        "title_en": "1) Integrated Planning & Vulnerability Synthesis (Recommended: Vacant Land + Facility Access + Roads + Industrial Cohesion)",
+        "title_tr": "1) Bütünleşik Planlama ve Kırılganlık Sentezi (Önerilen: Boş Arazi + Donatı Erişimi + Yol + Sanayi Bütünlüğü)",
         "short_en": "1) Integrated Synthesis (Recommended)",
         "short_tr": "1) Bütünleşik Sentez (Önerilen)",
         "desc_en": (
             "<b>Integrated Planning & Vulnerability Synthesis:</b> The default multi-criteria strategy for master-plan design and vulnerability assessment. "
             "<b>(1) Vacant vs. Built-Up Separation:</b> separates unbuilt / high-vacancy reserve blocks (candidates for new plans) from consolidated built-up blocks. "
-            "<b>(2) 500 m vs. 1000 m Facility Access:</b> groups blocks with similar walking distance to schools, health and green facilities. "
+            "<b>(2) Facility Accessibility:</b> groups blocks with similar walking distance to schools, health and green facilities. "
             "<b>(3) Road & Land-Use Nuances:</b> matches road width, surface and hierarchy; distinguishes low / sparse residential from medium / high-density residential and cemeteries; "
             "<b>keeps industrial blocks unified</b> while capturing industry-residential and industry-agriculture transition interfaces."
         ),
         "desc_tr": (
             "<b>Bütünleşik Planlama ve Kırılganlık Sentezi:</b> İmar planı tasarımı ve kırılganlık değerlendirmesi için varsayılan çok kriterli stratejidir. "
             "<b>(1) Boş Arazi - Yapılı Doku Ayrımı:</b> yeni plan yapılabilecek boş / seyrek rezerv adaları ile yapılaşmasını tamamlamış adaları ayırır. "
-            "<b>(2) 500 m / 1000 m Donatı Erişimi:</b> okul, sağlık ve yeşil alanlara yürüme mesafesi benzer olan adaları gruplar. "
+            "<b>(2) Donatı Alanlarına Erişim:</b> okul, sağlık ve yeşil alanlara yürüme mesafesi benzer olan adaları gruplar. "
             "<b>(3) Yol ve Arazi Kullanımı Ayrıntıları:</b> yol genişliği, kaplama ve kademelenmesi benzer adaları eşleştirir; düşük / seyrek konutu orta-yüksek yoğunluklu konuttan ve mezarlıktan ayırır; "
             "<b>sanayi alanlarını bütün tutar</b>, sanayi-konut ve sanayi-tarım geçiş yüzeylerini belirler."
         ),
@@ -722,10 +719,10 @@ ZONING_PRESETS = [
     },
     {
         "code": "access_school",
-        "title_en": "3) Facility & School Accessibility (500 m Served vs. 1000 m+ Deficit Zones)",
-        "title_tr": "3) Donatı ve Okul Erişilebilirliği (500 m Erişimli - 1000 m+ Donatı Açığı Bölgeleri)",
-        "short_en": "3) Facility Access 500 / 1000 m",
-        "short_tr": "3) Donatı Erişimi 500 / 1000 m",
+        "title_en": "3) Facility Accessibility & Service Balance",
+        "title_tr": "3) Donatı Alanlarına Erişim ve Donatı Dengesi",
+        "short_en": "3) Facility Accessibility",
+        "short_tr": "3) Donatı Alanlarına Erişim",
         "desc_en": (
             "<b>Facility & School Accessibility:</b> Clusters neighborhoods by walking distance to schools, primary health care and parks, "
             "separating well-served (&lt;500 m), moderately served (500-1000 m) and under-served (&gt;1000 m) zones."
@@ -785,11 +782,28 @@ ZONING_PRESETS = [
         "weights": (3.0, 2.0, 1.6, 2.2, 4.2, 2.0, 1.5, 2.0, 3.6),
     },
     {
+        "code": "organic_corridor",
+        "title_en": "7) Morphological / Natural Corridor & Valley Orientation (Organic Flow)",
+        "title_tr": "7) Morfolojik / Doğal Eksen ve Vadi Koridoru (Organik Akış)",
+        "short_en": "7) Natural Corridor (Organic)",
+        "short_tr": "7) Doğal Eksen (Organik)",
+        "desc_en": (
+            "<b>Morphological & Natural Corridor:</b> Ideal for study areas along creek/river valleys, fault lines, or linear transport axes. "
+            "Sets compactness to <i>Organic</i> mode, allowing zones to stretch naturally along topography and road spines without forcing artificial circularity."
+        ),
+        "desc_tr": (
+            "<b>Morfolojik ve Doğal Eksen:</b> Dere vadileri, fay hatları veya doğrusal ulaşım omurgaları boyunca uzanan alanlar için idealdir. "
+            "Kompaktlığı <i>Organik</i> moda alarak bölgelerin yapay daireselliğe zorlanmadan vadi ve cadde boyunca doğal olarak uzamasına izin verir."
+        ),
+        "weights": (2.2, 2.2, 3.2, 0.8, 4.5, 2.4, 2.0, 2.2, 2.2),
+        "compactness_mode": "organic",
+    },
+    {
         "code": "disaster_vuln",
-        "title_en": "7) Seismic / Flood Vulnerability & Natural Thresholds (Fault, Stream, Slope, Building Condition)",
-        "title_tr": "7) Deprem / Taşkın Kırılganlığı ve Doğal Eşikler (Fay, Dere, Eğim, Yapı Durumu)",
-        "short_en": "7) Disaster Vulnerability",
-        "short_tr": "7) Afet Kırılganlığı",
+        "title_en": "8) Seismic / Flood Vulnerability & Natural Thresholds (Fault, Stream, Slope, Building Condition)",
+        "title_tr": "8) Deprem / Taşkın Kırılganlığı ve Doğal Eşikler (Fay, Dere, Eğim, Yapı Durumu)",
+        "short_en": "8) Disaster Vulnerability",
+        "short_tr": "8) Afet Kırılganlığı",
         "desc_en": (
             "<b>Seismic / Flood Vulnerability & Natural Thresholds:</b> Prioritizes active-fault proximity, stream and flood corridors, DEM slope, "
             "heritage (Sit) sensitivity and building condition for the Exposure-Sensitivity-Adaptive Capacity (E, S, AC) synthesis."
@@ -799,13 +813,14 @@ ZONING_PRESETS = [
             "sit duyarlılığını ve yapı durumunu öne çıkararak Maruziyet-Duyarlılık-Uyum Kapasitesi (E, S, AC) ayrımını güçlendirir."
         ),
         "weights": (1.8, 2.6, 3.5, 2.2, 4.0, 1.8, 2.0, 1.6, 2.0),
+        "compactness_mode": "organic",
     },
     {
         "code": "manual_custom",
-        "title_en": "8) Balanced Standard / Custom Weights",
-        "title_tr": "8) Dengeli Standart / Özel Ağırlıklar",
-        "short_en": "8) Balanced / Custom",
-        "short_tr": "8) Dengeli / Özel",
+        "title_en": "9) Balanced Standard / Custom Weights",
+        "title_tr": "9) Dengeli Standart / Özel Ağırlıklar",
+        "short_en": "9) Balanced / Custom",
+        "short_tr": "9) Dengeli / Özel",
         "desc_en": (
             "<b>Balanced Standard / Custom Weights:</b> Starts from balanced weights for all criteria. "
             "Every weight below can be adjusted manually at any time."
@@ -815,8 +830,233 @@ ZONING_PRESETS = [
             "Aşağıdaki her ağırlık istenildiği zaman elle değiştirilebilir."
         ),
         "weights": (1.5, 1.5, 1.5, 2.0, 4.0, 1.5, 1.5, 1.5, 1.5),
+        "compactness_mode": "balanced",
     },
 ]
+
+
+WEIGHT_DETAILS = {
+    "p_k": {
+        "tr": {
+            "title": "1) Hedef Alt Bölge Sayısı (K)",
+            "mech": "Çalışma alanının bölüneceği nihai homojen bölge adedidir. Hiyerarşik Ward kümeleme bu sayıya ulaşana kadar en yakın ve morfolojik olarak uyumlu komşu hücreleri birleştirir.",
+            "min_val": "2",
+            "min_txt": "Tüm alanı yalnızca 2 dev makro-bölgeye ayırır (ör. Doğu-Batı); yerel doku ve morfoloji farkları silinir.",
+            "max_val": "60",
+            "max_txt": "Alanı çok küçük mikro ada kümelerine böler; sentez yerine parsel bazlı parçalanma oluşur.",
+            "rec": "15 – 35 (1/5000 NİP stüdyosu ve master plan için 20–30 arası idealdir)",
+        },
+        "en": {
+            "title": "1) Target Sub-Zone Count (K)",
+            "mech": "The target number of distinct planning sub-zones to be produced. Hierarchical Ward clustering merges adjacent cells until exactly K zones remain.",
+            "min_val": "2",
+            "min_txt": "Coarsely splits area into 2 macro-zones, losing localized fabric and density nuances.",
+            "max_val": "60",
+            "max_txt": "Creates 60 micro-clusters, approaching individual block-level fragmentation.",
+            "rec": "15 – 35 (Recommended 20–30 for master plans & studio work)",
+        },
+    },
+    "p_lu": {
+        "tr": {
+            "title": "2) Arazi Kullanımı & Alt Tür Ağırlığı",
+            "mech": "Konut (seyrek/düşük/orta/yüksek), ticaret, sanayi, tarım, donatı ve mezarlık adalarını kullanım profiline göre ayrıştırır.",
+            "min_val": "0.0",
+            "min_txt": "Arazi kullanımı görmezden gelinir; sanayi, ticaret ve konut rastgele aynı bölgede birleşebilir.",
+            "max_val": "5.0",
+            "max_txt": "Fonksiyon sınırları mutlak bariyer olur; farklı kullanım türleri asla aynı bölgeye dahil edilmez.",
+            "rec": "1.8 – 3.0 (Varsayılan: 2.2)",
+        },
+        "en": {
+            "title": "2) Land Use & Sub-Type Weight",
+            "mech": "Separates residential (sparse/low/medium/high), commercial, industrial, agricultural, cemetery, and facility blocks.",
+            "min_val": "0.0",
+            "min_txt": "Land uses ignored; industrial, residential, and agricultural lands may merge freely.",
+            "max_val": "5.0",
+            "max_txt": "Function boundaries become strict barriers; differing uses are strictly isolated.",
+            "rec": "1.8 – 3.0 (Default: 2.2)",
+        },
+    },
+    "p_yapi": {
+        "tr": {
+            "title": "3) Yapı Düzeni / Kat / Yoğunluk Ağırlığı",
+            "mech": "Ortalama kat adedi, taban alanı katsayısı (TAKS), yapı nizamı (ayrık/bitişik) ve kötü yapı oranını homojenleştirir.",
+            "min_val": "0.0",
+            "min_txt": "Kat ve nizam farkı önemsenmez; 8 katlı bitişik bloklar ile 1 katlı ayrık villalar birleşebilir.",
+            "max_val": "5.0",
+            "max_txt": "Morfolojik ayrım en üst düzeye çıkar; kat veya nizam farkı olan sokaklar hemen farklı alt bölgelere ayrılır.",
+            "rec": "2.0 – 3.2 (Varsayılan: 2.4)",
+        },
+        "en": {
+            "title": "3) Building Typology, TAKS & Density Weight",
+            "mech": "Separates blocks differing in story count, TAKS footprint, building order (detached/attached), and structural condition.",
+            "min_val": "0.0",
+            "min_txt": "Building heights and order ignored; 8-story row apartments and 1-story cottages merge.",
+            "max_val": "5.0",
+            "max_txt": "Maximum morphological purity; minor height or footprint differences split zones.",
+            "rec": "2.0 – 3.2 (Default: 2.4)",
+        },
+    },
+    "p_dogal": {
+        "tr": {
+            "title": "4) Doğal Eşikler & Koruma Ağırlığı",
+            "mech": "DEM eğim sınıfları, dere taşkın koridorları, diri fay hatları ve sit/arkeolojik koruma alanlarını doğal sınır olarak işler.",
+            "min_val": "0.0",
+            "min_txt": "Doğal eşikler dikkate alınmaz; vadi tabanı ile dik yamaç aynı bölge olarak birleşebilir.",
+            "max_val": "5.0",
+            "max_txt": "Dere, fay ve sit sınırları aşılamaz birer planlama sınırı oluşturur; riskli alanlar derhal izole edilir.",
+            "rec": "1.5 – 3.5 (Varsayılan: 1.6)",
+        },
+        "en": {
+            "title": "4) Natural Thresholds & Protection Weight",
+            "mech": "Isolates stream buffers, steep DEM slopes, active fault lines, and heritage (Sit) / flood risk areas.",
+            "min_val": "0.0",
+            "min_txt": "Topography and natural hazards ignored; steep slopes and valley floors merge together.",
+            "max_val": "5.0",
+            "max_txt": "Natural constraints become hard boundaries; hazard corridors are strictly segregated.",
+            "rec": "1.5 – 3.5 (Default: 1.6)",
+        },
+    },
+    "p_geo": {
+        "tr": {
+            "title": "5) Mekânsal Kompaktlık & Biçimsel Geometri Ağırlığı",
+            "mech": "Komşu hücrelerin yakınlığını ve ortak sınır payını denetler. Bölgelerin haritada derli toplu ve birleşik kalmasını sağlar.",
+            "min_val": "0.0",
+            "min_txt": "Kompaktlık cezası tamamen kapanır; vadi veya yol boyunca uzayan doğal koridorlar serbestçe oluşur.",
+            "max_val": "5.0",
+            "max_txt": "Bölgeler aşırı yuvarlak/kare süperbloklara zorlanır; ince uzun doğal koridorlar bile zorla kırpılır.",
+            "rec": "1.5 – 3.0 (Varsayılan: 2.5)",
+        },
+        "en": {
+            "title": "5) Spatial Compactness & Form Weight",
+            "mech": "Controls spatial contiguity, shared perimeter ratios, and geometric compactness to prevent erratic shapes.",
+            "min_val": "0.0",
+            "min_txt": "Compactness penalty disabled; elongated organic corridors form freely along terrain or roads.",
+            "max_val": "5.0",
+            "max_txt": "Zones are forcefully rounded into convex superblocks; linear corridors are broken down.",
+            "rec": "1.5 – 3.0 (Default: 2.5)",
+        },
+    },
+    "p_cap": {
+        "tr": {
+            "title": "6) Makro-Bölge Bütünlüğü & Alan Tavanı Çarpanı",
+            "mech": "Bir alt bölgenin ortalama bölge alanına kıyasla ne kadar büyüyebileceğini sınırlar. Büyük sanayi (OSB) ve ovaları bütün tutar.",
+            "min_val": "1.5",
+            "min_txt": "Tüm bölgeleri neredeyse eşit metrekareye zorlar; geniş organize sanayi siteleri yapay olarak bölünür.",
+            "max_val": "20.0",
+            "max_txt": "Alan tavanı esnetilir; kesintisiz tarım kuşakları veya dev sanayi alanları tek parça dev bölge olarak kalır.",
+            "rec": "3.5 – 5.5 (Varsayılan: 4.0)",
+        },
+        "en": {
+            "title": "6) Macro-Zone Area Cap & Cohesion Multiplier",
+            "mech": "Limits maximum sub-zone size relative to mean sub-zone area. Prevents artificial splitting of massive industrial zones.",
+            "min_val": "1.5",
+            "min_txt": "Forces near-equal zone areas; massive industrial districts or plains are artificially fractured.",
+            "max_val": "20.0",
+            "max_txt": "Cohesion cap relaxed; continuous agricultural or industrial districts remain single massive entities.",
+            "rec": "3.5 – 5.5 (Default: 4.0)",
+        },
+    },
+    "p_bos": {
+        "tr": {
+            "title": "7) Boş Arazi & Yeni Planlama Potansiyeli Ağırlığı",
+            "mech": "İmar adalarındaki boş/yapılaşmamış parsel oranını analiz eder. Yeni plan yapılabilecek rezerv alanlar ile yerleşik dokuyu ayırır.",
+            "min_val": "0.0",
+            "min_txt": "Parsel doluluk/boşluk oranları dikkate alınmaz; tamamen dolu ada ile bomboş tarla birleşebilir.",
+            "max_val": "5.0",
+            "max_txt": "Boş rezerv alanlar ile yapılı mahalleler arasında en keskin sınır ayrımı elde edilir.",
+            "rec": "2.0 – 3.5 (Varsayılan: 2.8)",
+        },
+        "en": {
+            "title": "7) Vacant Land & New Plan Potential Weight",
+            "mech": "Measures vacant parcel ratios within blocks, isolating strategic development reserves from mature urban fabric.",
+            "min_val": "0.0",
+            "min_txt": "Vacant ratios ignored; fully developed dense quarters merge freely with empty reserve land.",
+            "max_val": "5.0",
+            "max_txt": "Sharpest possible segregation between unbuilt development reserves and consolidated neighborhoods.",
+            "rec": "2.0 – 3.5 (Default: 2.8)",
+        },
+    },
+    "p_erisim": {
+        "tr": {
+            "title": "8) Donatı Alanlarına Erişim Ağırlığı",
+            "mech": "Okul, park ve sağlık ocaklarına olan yürüme mesafelerini (MPYY 500m/1000m hizmet yarıçapı) değerlendirir.",
+            "min_val": "0.0",
+            "min_txt": "Donatı mesafesi önemsenmez; donatısı zengin mahalle ile donatı yoksunu mahalle birleşebilir.",
+            "max_val": "5.0",
+            "max_txt": "Donatı erişim mesafeleri birincil eşik olur; hizmet alanlar ile hizmet açığı olanlar kesin ayrılır.",
+            "rec": "1.8 – 3.0 (Varsayılan: 2.4)",
+        },
+        "en": {
+            "title": "8) Facility Accessibility Weight",
+            "mech": "Evaluates walking distance to schools, parks, and healthcare based on MPYY 500m/1000m service radii.",
+            "min_val": "0.0",
+            "min_txt": "Walking access ignored; well-served quarters and facility deserts merge indiscriminately.",
+            "max_val": "5.0",
+            "max_txt": "Service radii strictly dictate boundaries, cleanly separating well-served from underserved zones.",
+            "rec": "1.8 – 3.0 (Default: 2.4)",
+        },
+    },
+    "p_yol": {
+        "tr": {
+            "title": "9) Yol Ağı Benzerliği & Hiyerarşisi Ağırlığı",
+            "mech": "Yol genişliği, kaplama cinsi (asfalt, parke vb.) ve sokak kademelenmesi benzer olan adaları bir araya getirir.",
+            "min_val": "0.0",
+            "min_txt": "Yol genişliği ve kaplama cinsi sınır ayrımında hiçbir etki yapmaz.",
+            "max_val": "5.0",
+            "max_txt": "Geniş bulvarlar ve kaplama değişimleri anında bölge sınırına dönüşür; ulaşım dokuları ayrışır.",
+            "rec": "1.5 – 3.0 (Varsayılan: 2.2)",
+        },
+        "en": {
+            "title": "9) Road Hierarchy & Network Similarity Weight",
+            "mech": "Groups neighboring blocks with similar road width, surface pavement (asphalt, stone), and street hierarchy.",
+            "min_val": "0.0",
+            "min_txt": "Road widths and surface types have zero influence on zone clustering.",
+            "max_val": "5.0",
+            "max_txt": "Broad avenues and pavement changes immediately trigger zone boundaries.",
+            "rec": "1.5 – 3.0 (Default: 2.2)",
+        },
+    },
+    "p_odak": {
+        "tr": {
+            "title": "10) Sanayi (OSB) Bütünlüğü ve İzolasyonu",
+            "mech": "Sanayi ve depolama alanlarının konut içine karışmasını engeller; sanayiyi tek parça ve kompakt tutar.",
+            "min_val": "0.0",
+            "min_txt": "Sanayi adaları çevredeki konut veya tarım dokusunun içine dağılarak eriyebilir.",
+            "max_val": "5.0",
+            "max_txt": "Sanayi alanları katı bir blok halinde kenetlenir ve çevresindeki konuttan tamamen izole edilir.",
+            "rec": "2.0 – 3.5 (Varsayılan: 2.5)",
+        },
+        "en": {
+            "title": "10) Industrial (OIZ) Cohesion & Isolation",
+            "mech": "Prevents industrial/storage intrusion into residential zones, enforcing cohesive industrial clusters.",
+            "min_val": "0.0",
+            "min_txt": "Industrial blocks may be dissolved into surrounding residential or agricultural zones.",
+            "max_val": "5.0",
+            "max_txt": "Industrial zones are locked into impenetrable clusters strictly isolated from housing.",
+            "rec": "2.0 – 3.5 (Default: 2.5)",
+        },
+    },
+    "p_grid": {
+        "tr": {
+            "title": "11) Yedek Izgara Boyutu (m)",
+            "mech": "Yol ağı katmanı verilmediğinde veya grid analizi seçildiğinde kullanılacak varsayılan ızgara hücre genişliğidir.",
+            "min_val": "50m",
+            "min_txt": "Çok ince taneli mikro-hücreler üretir; analiz süresi uzar ancak detay artar.",
+            "max_val": "2000m",
+            "max_txt": "Çok kaba 2 kilometrelik makro-hücreler üretir; hızlıdır fakat detaylar kaybolur.",
+            "rec": "100m – 300m (Varsayılan: 200 m)",
+        },
+        "en": {
+            "title": "11) Fallback Grid Size (m)",
+            "mech": "Default grid cell width in meters used only when no road network vector layer is provided.",
+            "min_val": "50m",
+            "min_txt": "Generates very fine micro-cells; high detail but increases processing time.",
+            "max_val": "2000m",
+            "max_txt": "Produces coarse 2 km macro-cells; very fast but details are smoothed out.",
+            "rec": "100m – 300m (Default: 200 m)",
+        },
+    },
+}
 
 
 class BolgelemeDialog(QDialog):
@@ -1028,6 +1268,7 @@ class BolgelemeDialog(QDialog):
                 self.cmb_lang.blockSignals(False)
         tr = UI_TRANSLATIONS[lang_code]
         fb = UI_TRANSLATIONS["en"]
+
         def g(k):
             return tr.get(k, fb.get(k, ""))
 
@@ -1101,6 +1342,41 @@ class BolgelemeDialog(QDialog):
                 for btn_p, pr in self._preset_quick_btns:
                     btn_p.setText(pr["short_tr"] if is_tr else pr["short_en"])
             self._update_preset_description_only()
+
+        if hasattr(self, "cmb_compactness_mode"):
+            cur_cm = self.cmb_compactness_mode.currentData() or "balanced"
+            self.cmb_compactness_mode.blockSignals(True)
+            self.cmb_compactness_mode.clear()
+            if is_tr:
+                self.cmb_compactness_mode.addItem("🌿 Morfolojik / Doğal Eksen (Vadi & Koridor Serbestliği)", "organic")
+                self.cmb_compactness_mode.addItem("⚖️ Dengeli Standart (Planlama Normu)", "balanced")
+                self.cmb_compactness_mode.addItem("🎯 Yüksek Kompaktlık (Dairesel / Dörtgen Süperbloklar)", "strict")
+            else:
+                self.cmb_compactness_mode.addItem("🌿 Morphological / Natural Axis (Organic Valley Flow)", "organic")
+                self.cmb_compactness_mode.addItem("⚖️ Balanced Standard (Planning Norm)", "balanced")
+                self.cmb_compactness_mode.addItem("🎯 High Compactness (Convex / Circular Superblocks)", "strict")
+            idx_cm = self.cmb_compactness_mode.findData(cur_cm)
+            if idx_cm >= 0:
+                self.cmb_compactness_mode.setCurrentIndex(idx_cm)
+            else:
+                self.cmb_compactness_mode.setCurrentIndex(1)
+            self.cmb_compactness_mode.blockSignals(False)
+
+        if hasattr(self, "_advanced_cards"):
+            for k_prefix, c_data in self._advanced_cards.items():
+                det = c_data["details"]
+                d_lang = det["tr"] if is_tr else det["en"]
+                c_data["title_label"].setText(f"<b>{d_lang['title']}</b>")
+                how_txt = f"<b>{('Çalışma Mantığı:' if is_tr else 'How it Works:')}</b> {d_lang['mech']}"
+                ext_txt = (
+                    f"<b>Min ({d_lang['min_val']}):</b> {d_lang['min_txt']}  •  "
+                    f"<b>Maks ({d_lang['max_val']}):</b> {d_lang['max_txt']}<br/>"
+                    f"<b>{('Önerilen:' if is_tr else 'Recommended:')}</b> <span style='color: #0369a1;'>{d_lang['rec']}</span>"
+                )
+                c_data["how_label"].setText(how_txt)
+                c_data["extremes_label"].setText(ext_txt)
+                if "update_badge" in c_data:
+                    c_data["update_badge"]()
 
         if hasattr(self, "tbl"):
             self.tbl.setHorizontalHeaderLabels([g("tbl_col_0"), g("tbl_col_1"), g("tbl_col_2")])
@@ -1373,7 +1649,7 @@ class BolgelemeDialog(QDialog):
         lay.setContentsMargins(10, 8, 10, 10)
         lay.setSpacing(10)
 
-        self.grp_e = QGroupBox("E. Natural Thresholds, Conservation Areas & Facilities")
+        self.grp_e = QGroupBox("E. Natural Thresholds & Protected Areas")
         v = QVBoxLayout(self.grp_e)
         v.setContentsMargins(12, 10, 12, 10)
         v.setSpacing(8)
@@ -1462,7 +1738,12 @@ class BolgelemeDialog(QDialog):
         bnd_cand, road_cand, blk_cand, bldg_cand = None, None, None, None
         for lyr in proj_layers:
             nm = alg.norm_tr(lyr.name())
-            if any(x in nm for x in ("alt_bolge", "hucre", "imar_adasi_hucre")):
+            # Donatıları, yapıları, adaları, yolları, itfaiyeyi ve kırılganlık parçalarını doğal eşiklerden kesinlikle hariç tut
+            if any(x in nm for x in (
+                "alt_bolge", "hucre", "imar_adasi_hucre", "itfaye", "itfaiye",
+                "kirilganlik_parca", "kirilganlik", "yapi", "bina", "ada", "yol",
+                "park", "asm", "saglik", "okul", "egitim", "cami", "donati"
+            )):
                 continue
             if isinstance(lyr, QgsVectorLayer):
                 gtype = lyr.geometryType()
@@ -1682,6 +1963,23 @@ class BolgelemeDialog(QDialog):
             spn.blockSignals(True)
             spn.setValue(val_w)
             spn.blockSignals(False)
+            if hasattr(spn, "_sync_slider") and spn._sync_slider is not None:
+                spn._sync_slider.blockSignals(True)
+                scale = getattr(spn, "_slider_scale", 10)
+                spn._sync_slider.setValue(int(round(float(val_w) * scale)))
+                spn._sync_slider.blockSignals(False)
+            if hasattr(spn, "_update_badge") and spn._update_badge is not None:
+                spn._update_badge()
+
+        # Kompaktlık Modu (compactness_mode)
+        c_mode = pr.get("compactness_mode", "balanced")
+        if hasattr(self, "cmb_compactness_mode"):
+            idx_cm = self.cmb_compactness_mode.findData(c_mode)
+            if idx_cm >= 0:
+                self.cmb_compactness_mode.blockSignals(True)
+                self.cmb_compactness_mode.setCurrentIndex(idx_cm)
+                self.cmb_compactness_mode.blockSignals(False)
+
         self._update_preset_description_only()
 
     def _select_preset_code(self, code):
@@ -1737,12 +2035,12 @@ class BolgelemeDialog(QDialog):
         pr_top.addWidget(self.cmb_preset, 1)
         v_pr.addLayout(pr_top)
 
-        # Tek Tıkla Hızlı Seçim Butonları (İlk 6 Strateji)
+        # Tek Tıkla Hızlı Seçim Butonları (9 Strateji - 3x3 Grid)
         btn_grid = QGridLayout()
         btn_grid.setHorizontalSpacing(8)
         btn_grid.setVerticalSpacing(6)
         self._preset_quick_btns = []
-        for idx_b, pr in enumerate(ZONING_PRESETS[:6]):
+        for idx_b, pr in enumerate(ZONING_PRESETS):
             b_quick = QPushButton(pr["short_en"])
             if PointingHandCursor is not None:
                 b_quick.setCursor(PointingHandCursor)
@@ -1764,30 +2062,15 @@ class BolgelemeDialog(QDialog):
         grid = QGridLayout(self.grp_g)
         grid.setContentsMargins(12, 12, 12, 12)
         grid.setHorizontalSpacing(14)
-        grid.setVerticalSpacing(10)
+        grid.setVerticalSpacing(12)
         self._param_card_labels = {}
+        self._advanced_cards = {}
 
-        def make_param_card(key_prefix, title_text, widget, desc_text):
-            card = QFrame()
-            card.setStyleSheet(
-                "QFrame { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }"
-            )
-            cl = QVBoxLayout(card)
-            cl.setContentsMargins(10, 8, 10, 8)
-            cl.setSpacing(4)
-            top_row = QHBoxLayout()
-            lbl_t = QLabel(f"<b>{title_text}</b>")
-            lbl_t.setStyleSheet("border: none; background: transparent; color: #0f172a;")
-            widget.setMinimumWidth(95)
-            top_row.addWidget(lbl_t, 1)
-            top_row.addWidget(widget)
-            cl.addLayout(top_row)
-            lbl_d = QLabel(desc_text)
-            lbl_d.setWordWrap(True)
-            lbl_d.setStyleSheet("border: none; background: transparent; color: #475569; font-size: 11px;")
-            cl.addWidget(lbl_d)
-            self._param_card_labels[key_prefix] = (lbl_t, lbl_d)
-            return card
+        # Spinboxlar
+        self.spn_k = QSpinBox()
+        self.spn_k.setRange(2, 60)
+        self.spn_k.setValue(25)
+        self.spn_k.valueChanged.connect(lambda _: self._on_mode_changed())
 
         def dsp(v, lo=0.0, hi=5.0, step=0.1):
             d = QDoubleSpinBox()
@@ -1795,11 +2078,6 @@ class BolgelemeDialog(QDialog):
             d.setSingleStep(step)
             d.setValue(v)
             return d
-
-        self.spn_k = QSpinBox()
-        self.spn_k.setRange(2, 60)
-        self.spn_k.setValue(25)
-        self.spn_k.valueChanged.connect(lambda _: self._on_mode_changed())
 
         self.w_lu = dsp(2.2)
         self.w_yapi = dsp(2.4)
@@ -1816,17 +2094,208 @@ class BolgelemeDialog(QDialog):
         self.grid.setValue(200)
         self.grid.setSuffix(" m")
 
-        grid.addWidget(make_param_card("p_k", "1) Target Sub-Zone Count (K)", self.spn_k, "Exact number of sequential sub-zones to create (e.g., 25 -> M1..M25, 28 -> M1..M28 without gaps)."), 0, 0)
-        grid.addWidget(make_param_card("p_lu", "2) Land Use & Sub-Type Weight", self.w_lu, "Separates residential (low/sparse vs high density), commercial, industrial, agricultural, cemetery, and facility blocks."), 0, 1)
-        grid.addWidget(make_param_card("p_yapi", "3) Building / Floor / Density Weight", self.w_yapi, "Separates blocks differing in TAKS, floor count, building order, poor structural condition, and population density."), 1, 0)
-        grid.addWidget(make_param_card("p_dogal", "4) Natural Threshold & Protection Weight", self.w_dogal, "Isolates stream buffers, steep DEM slopes, active fault lines, and heritage (Sit) / flood risk areas."), 1, 1)
-        grid.addWidget(make_param_card("p_geo", "5) Spatial Compactness Weight", self.w_geo, "Produces compact, cohesive neighborhood shapes and prevents long road-corridor strips."), 2, 0)
-        grid.addWidget(make_param_card("p_cap", "6) Max Zone Area Cap Multiplier", self.cap, "Maximum allowed ratio of a sub-zone's area relative to the average sub-zone area."), 2, 1)
-        grid.addWidget(make_param_card("p_bos", "7) Vacant Land & New Plan Potential Weight", self.w_bos, "Separates high-vacant-land reserve blocks (for drawing new plans) from fully built-up urban fabric."), 3, 0)
-        grid.addWidget(make_param_card("p_erisim", "8) Facility & School Access (500m / 1000m) Weight", self.w_erisim, "Groups blocks with similar walking access to schools/parks/health (e.g., ~500m zone vs ~1000m zone)."), 3, 1)
-        grid.addWidget(make_param_card("p_yol", "9) Road Network Similarity Weight", self.w_yol, "Groups neighboring blocks with similar road width, surface pavement, and street hierarchy."), 4, 0)
-        grid.addWidget(make_param_card("p_odak", "10) Special Cluster Focus (Industry / Agri / Commercial)", self.w_odak, "Keeps industrial blocks cohesive without splitting, and highlights Industry-Residential / Industry-Agri transitions."), 4, 1)
-        grid.addWidget(make_param_card("p_grid", "11) Fallback Grid Size", self.grid, "Default grid cell width used only when no road network layer is provided."), 5, 0, 1, 2)
+        # Sliderlar
+        def make_slider(min_val, max_val, val, step=1):
+            s = QSlider(OrientationHorizontal)
+            s.setRange(min_val, max_val)
+            s.setSingleStep(step)
+            s.setValue(val)
+            s.setStyleSheet(
+                "QSlider::groove:horizontal { height: 6px; background: #e2e8f0; border-radius: 3px; } "
+                "QSlider::sub-page:horizontal { background: #0284c7; border-radius: 3px; } "
+                "QSlider::handle:horizontal { background: #0369a1; border: 2px solid #ffffff; width: 16px; margin: -5px 0; border-radius: 8px; }"
+            )
+            return s
+
+        sld_k = make_slider(2, 60, 25)
+        sld_lu = make_slider(0, 50, 22)
+        sld_yapi = make_slider(0, 50, 24)
+        sld_dogal = make_slider(0, 50, 16)
+        sld_geo = make_slider(0, 50, 25)
+        sld_cap = make_slider(15, 200, 40, step=5)
+        sld_bos = make_slider(0, 50, 28)
+        sld_erisim = make_slider(0, 50, 24)
+        sld_yol = make_slider(0, 50, 22)
+        sld_odak = make_slider(0, 50, 25)
+        sld_grid = make_slider(50, 2000, 200, step=10)
+
+        # Kompaktlık Modu Açılır Kutusu
+        self.cmb_compactness_mode = QComboBox()
+        self.cmb_compactness_mode.addItem("🌿 Morphological / Natural Axis (Organic Valley Flow)", "organic")
+        self.cmb_compactness_mode.addItem("⚖️ Balanced Standard (Planning Norm)", "balanced")
+        self.cmb_compactness_mode.addItem("🎯 High Compactness (Convex / Circular Superblocks)", "strict")
+        self.cmb_compactness_mode.setCurrentIndex(1)
+        self.cmb_compactness_mode.setToolTip(
+            "Organic mode allows zones along stream/river valleys and transport axes to stretch naturally without penalty."
+        )
+
+        def make_advanced_weight_card(key_prefix, spinbox, slider, is_int=False, scale=10, cmb_extra=None):
+            card = QFrame()
+            card.setStyleSheet(
+                "QFrame { background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 2px; } "
+                "QFrame:hover { border-color: #94a3b8; }"
+            )
+            cl = QVBoxLayout(card)
+            cl.setContentsMargins(12, 10, 12, 10)
+            cl.setSpacing(6)
+
+            det = WEIGHT_DETAILS[key_prefix]
+            is_tr = (getattr(self, "current_lang", "en") == "tr")
+            d_lang = det["tr"] if is_tr else det["en"]
+
+            # Header: Title + Dynamic Badge
+            top_row = QHBoxLayout()
+            lbl_title = QLabel(f"<b>{d_lang['title']}</b>")
+            lbl_title.setStyleSheet("border: none; background: transparent; color: #0f172a; font-size: 12px;")
+
+            lbl_badge = QLabel()
+            lbl_badge.setStyleSheet(
+                "border-radius: 4px; padding: 2px 8px; font-size: 10px; font-weight: 700; border: 1px solid #cbd5e1;"
+            )
+            top_row.addWidget(lbl_title, 1)
+            top_row.addWidget(lbl_badge)
+            cl.addLayout(top_row)
+
+            # Control Row: Slider + Spinbox
+            ctrl_row = QHBoxLayout()
+            ctrl_row.setSpacing(10)
+            ctrl_row.addWidget(slider, 1)
+            spinbox.setMinimumWidth(85)
+            ctrl_row.addWidget(spinbox)
+            cl.addLayout(ctrl_row)
+
+            if cmb_extra is not None:
+                cl.addWidget(cmb_extra)
+
+            def update_badge():
+                is_tr_cur = (getattr(self, "current_lang", "en") == "tr")
+                v = float(spinbox.value())
+                if is_int:
+                    if key_prefix == "p_k":
+                        if v <= 8:
+                            txt = "🔵 Makro Bölge (Kaba)" if is_tr_cur else "🔵 Macro Zones (Coarse)"
+                            bg, fg, bc = "#e0f2fe", "#0369a1", "#7dd3fc"
+                        elif v <= 25:
+                            txt = "🟢 Semt / Doku (Önerilen)" if is_tr_cur else "🟢 District Level (Optimal)"
+                            bg, fg, bc = "#dcfce7", "#15803d", "#86efac"
+                        elif v <= 40:
+                            txt = "🟠 Mahalle / Detay" if is_tr_cur else "🟠 Neighborhood (Fine)"
+                            bg, fg, bc = "#ffedd5", "#c2410c", "#fdba74"
+                        else:
+                            txt = "🔴 Mikro-Ada (Aşırı Detay)" if is_tr_cur else "🔴 Micro-Block (Very Fine)"
+                            bg, fg, bc = "#fee2e2", "#b91c1c", "#fca5a5"
+                    elif key_prefix == "p_grid":
+                        txt = f"{int(v)} m"
+                        bg, fg, bc = "#f1f5f9", "#334155", "#cbd5e1"
+                    else:
+                        txt = f"{int(v)}"
+                        bg, fg, bc = "#f1f5f9", "#334155", "#cbd5e1"
+                else:
+                    if key_prefix == "p_cap":
+                        if v <= 2.0:
+                            txt = "🔵 Katı Eşit Alan (Bölünme Riski)" if is_tr_cur else "🔵 Strict Equal Area"
+                            bg, fg, bc = "#e0f2fe", "#0369a1", "#7dd3fc"
+                        elif v <= 5.0:
+                            txt = "🟢 Dengeli Tavan (Önerilen)" if is_tr_cur else "🟢 Balanced Cap (Optimal)"
+                            bg, fg, bc = "#dcfce7", "#15803d", "#86efac"
+                        else:
+                            txt = "🟠 Geniş / Serbest Makro-Bölge" if is_tr_cur else "🟠 Open Macro-Zone"
+                            bg, fg, bc = "#ffedd5", "#c2410c", "#fdba74"
+                    else:
+                        if v <= 0.05:
+                            txt = "⚪ Etkisiz (%0)" if is_tr_cur else "⚪ Inactive (0%)"
+                            bg, fg, bc = "#f1f5f9", "#64748b", "#cbd5e1"
+                        elif v <= 1.5:
+                            txt = f"🔵 Düşük Etki ({v:.1f})" if is_tr_cur else f"🔵 Low Impact ({v:.1f})"
+                            bg, fg, bc = "#e0f2fe", "#0369a1", "#7dd3fc"
+                        elif v <= 3.2:
+                            txt = f"🟢 Dengeli / Standart ({v:.1f})" if is_tr_cur else f"🟢 Balanced ({v:.1f})"
+                            bg, fg, bc = "#dcfce7", "#15803d", "#86efac"
+                        else:
+                            txt = f"🟠 Yüksek / Baskın ({v:.1f})" if is_tr_cur else f"🟠 Dominant ({v:.1f})"
+                            bg, fg, bc = "#ffedd5", "#c2410c", "#fdba74"
+
+                lbl_badge.setText(txt)
+                lbl_badge.setStyleSheet(
+                    f"background-color: {bg}; color: {fg}; border: 1px solid {bc}; "
+                    "border-radius: 4px; padding: 2px 8px; font-size: 10px; font-weight: 700;"
+                )
+
+            def on_slider(val):
+                spinbox.blockSignals(True)
+                if is_int:
+                    spinbox.setValue(val)
+                else:
+                    spinbox.setValue(val / float(scale))
+                spinbox.blockSignals(False)
+                update_badge()
+
+            def on_spinbox(val):
+                slider.blockSignals(True)
+                if is_int:
+                    slider.setValue(int(val))
+                else:
+                    slider.setValue(int(round(float(val) * scale)))
+                slider.blockSignals(False)
+                update_badge()
+
+            slider.valueChanged.connect(on_slider)
+            spinbox.valueChanged.connect(on_spinbox)
+            spinbox._sync_slider = slider
+            spinbox._slider_scale = scale
+            spinbox._update_badge = update_badge
+
+            # Pedagogical Explanation Box
+            info_frame = QFrame()
+            info_frame.setStyleSheet(
+                "QFrame { background-color: #f8fafc; border: 1px solid #e2e8f0; "
+                "border-left: 3px solid #0284c7; border-radius: 5px; padding: 6px; }"
+            )
+            v_info = QVBoxLayout(info_frame)
+            v_info.setContentsMargins(6, 4, 6, 4)
+            v_info.setSpacing(3)
+
+            lbl_how = QLabel(f"<b>{('Çalışma Mantığı:' if is_tr else 'How it Works:')}</b> {d_lang['mech']}")
+            lbl_how.setWordWrap(True)
+            lbl_how.setStyleSheet("border: none; background: transparent; color: #334155; font-size: 11px;")
+
+            ext_str = (
+                f"<b>Min ({d_lang['min_val']}):</b> {d_lang['min_txt']}  •  "
+                f"<b>Maks ({d_lang['max_val']}):</b> {d_lang['max_txt']}<br/>"
+                f"<b>{('Önerilen:' if is_tr else 'Recommended:')}</b> <span style='color: #0369a1;'>{d_lang['rec']}</span>"
+            )
+            lbl_extremes = QLabel(ext_str)
+            lbl_extremes.setWordWrap(True)
+            lbl_extremes.setStyleSheet("border: none; background: transparent; color: #475569; font-size: 10.5px;")
+
+            v_info.addWidget(lbl_how)
+            v_info.addWidget(lbl_extremes)
+            cl.addWidget(info_frame)
+
+            update_badge()
+            self._advanced_cards[key_prefix] = {
+                "title_label": lbl_title,
+                "badge_label": lbl_badge,
+                "how_label": lbl_how,
+                "extremes_label": lbl_extremes,
+                "details": det,
+                "spinbox": spinbox,
+                "update_badge": update_badge,
+            }
+            self._param_card_labels[key_prefix] = (lbl_title, lbl_how)
+            return card
+
+        grid.addWidget(make_advanced_weight_card("p_k", self.spn_k, sld_k, is_int=True), 0, 0)
+        grid.addWidget(make_advanced_weight_card("p_lu", self.w_lu, sld_lu), 0, 1)
+        grid.addWidget(make_advanced_weight_card("p_yapi", self.w_yapi, sld_yapi), 1, 0)
+        grid.addWidget(make_advanced_weight_card("p_dogal", self.w_dogal, sld_dogal), 1, 1)
+        grid.addWidget(make_advanced_weight_card("p_geo", self.w_geo, sld_geo, cmb_extra=self.cmb_compactness_mode), 2, 0)
+        grid.addWidget(make_advanced_weight_card("p_cap", self.cap, sld_cap, scale=10), 2, 1)
+        grid.addWidget(make_advanced_weight_card("p_bos", self.w_bos, sld_bos), 3, 0)
+        grid.addWidget(make_advanced_weight_card("p_erisim", self.w_erisim, sld_erisim), 3, 1)
+        grid.addWidget(make_advanced_weight_card("p_yol", self.w_yol, sld_yol), 4, 0)
+        grid.addWidget(make_advanced_weight_card("p_odak", self.w_odak, sld_odak), 4, 1)
+        grid.addWidget(make_advanced_weight_card("p_grid", self.grid, sld_grid, is_int=True), 5, 0, 1, 2)
 
         self.cmb_preset.currentIndexChanged.connect(self._apply_preset_by_index)
         self._update_preset_description_only()
@@ -1843,7 +2312,7 @@ class BolgelemeDialog(QDialog):
         self.chk_excel = QCheckBox("Match sub-zones with canonical MPYY character & intervention profiles")
         self.chk_excel.setChecked(True)
         self.chk_quick_layer = QCheckBox("Also add simplified 'Alt_Bolgeler_Hizli_Ozet' layer to map (Quick-reading columns only)")
-        self.chk_quick_layer.setChecked(True)
+        self.chk_quick_layer.setChecked(False)
         self.chk_cells = QCheckBox("Also add intermediate urban block cells layer ('Imar_Adasi_Hucreleri') to map")
 
         v_opts.addWidget(self.chk_filter_medians)
@@ -2091,6 +2560,7 @@ class BolgelemeDialog(QDialog):
             "dem_step": float(self.spn_step.value()),
             "K": self.spn_k.value(),
             "preset_mode": self.cmb_preset.currentData() if hasattr(self, "cmb_preset") else "integrated_synthesis",
+            "compactness_mode": self.cmb_compactness_mode.currentData() if hasattr(self, "cmb_compactness_mode") else "balanced",
             "w_lu": self.w_lu.value(),
             "w_yapi": self.w_yapi.value(),
             "w_dogal": self.w_dogal.value(),
@@ -2116,6 +2586,15 @@ class BolgelemeDialog(QDialog):
             res = analiz.run_pipeline(P, self.log, self.progress.setValue)
             lyr, self.records = analiz.make_zone_layer(res, quick_only=False)
             lyr_quick, self.quick_records = analiz.make_zone_layer(res, quick_only=True)
+            # Eski bolgeleme katmanlarini projeden temizle (tek cikti garantisi)
+            proj = QgsProject.instance()
+            old_ids = [
+                lid for lid, l in proj.mapLayers().items()
+                if l.name().startswith("Alt_Bolgeler") or l.name().startswith("Alt_Bölgeler")
+            ]
+            if old_ids:
+                proj.removeMapLayers(old_ids)
+
             if self.chk_cells.isChecked():
                 QgsProject.instance().addMapLayer(analiz.make_cell_layer(res))
             if hasattr(self, "chk_quick_layer") and self.chk_quick_layer.isChecked():

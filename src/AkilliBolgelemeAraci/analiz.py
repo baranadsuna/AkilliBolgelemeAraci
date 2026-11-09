@@ -11,10 +11,6 @@ from collections import Counter, defaultdict
 from qgis.PyQt.QtCore import QVariant
 from qgis.PyQt.QtGui import QColor, QFont
 from qgis.PyQt.QtWidgets import QApplication
-
-_QVAR_INT = getattr(QVariant, "Int", 2)
-_QVAR_DOUBLE = getattr(QVariant, "Double", 6)
-_QVAR_STRING = getattr(QVariant, "String", 10)
 from qgis.core import (
     QgsGeometry, QgsPointXY, QgsSpatialIndex, QgsFeature, QgsWkbTypes, QgsRectangle,
     QgsCoordinateTransform, QgsProject, QgsVectorLayer, QgsRasterLayer, QgsField, NULL,
@@ -25,17 +21,18 @@ from qgis.core import (
 
 from . import algoritma as alg
 
+_QVAR_INT = getattr(QVariant, "Int", 2)
+_QVAR_DOUBLE = getattr(QVariant, "Double", 6)
+_QVAR_STRING = getattr(QVariant, "String", 10)
+
 ROLES = [
     ("Dere / Akarsu Yatağı (Uzaklık - m)", "dere", "dist"),
     ("Sit / Koruma Alanı (Alan Oranı - %)", "sit", "share"),
     ("Diri Fay Hattı (Uzaklık - m)", "fay", "dist"),
     ("Taşkın / Afet Risk Alanı (Alan Oranı - %)", "risk", "share"),
-    ("Sosyal ve Teknik Altyapı / Donatı (Adet)", "donati", "count"),
-    ("Afet Toplanma Alanı (Uzaklık - m)", "toplanma", "dist"),
-    ("Sağlık Tesisi / Hastane (Uzaklık - m)", "saglik", "dist"),
-    ("Tarım / Mera / Boş Alan (Alan Oranı - %)", "tarim", "share"),
-    ("Sanayi / OSB / Depolama (Alan Oranı - %)", "sanayi", "share"),
-    ("Diğer Katman (Otomatik Algıla)", "genel", "auto"),
+    ("Tarım / Mera / Çevre Koruma (Alan Oranı - %)", "tarim", "share"),
+    ("Sanayi / OSB Çevre Kuşağı (Alan Oranı - %)", "sanayi", "share"),
+    ("Diğer Doğal Eşik Katmanı (Otomatik Algıla)", "genel", "auto"),
 ]
 DIR_NAMES = ["Doğu", "Kuzeydoğu", "Kuzey", "Kuzeybatı", "Batı", "Güneybatı", "Güney", "Güneydoğu"]
 
@@ -713,7 +710,7 @@ def apply_population_settings(S, pop_cfg, log, cells=None, cidx=None, res_block_
     if res_block_pops and cells and cidx and manual_total > 0:
         for s in S:
             s["nufus"] = 0.0
-        for rc in res_Candidates if False else res_block_pops:
+        for rc in res_block_pops:
             g_blk = rc["geom"]
             pop_val = rc["pop"]
             if pop_val <= 0.0:
@@ -1219,12 +1216,14 @@ def run_pipeline(P, log, progress):
     groups["geo"]["gy"] = [p[1] for p in pts]
 
     preset_mode = P.get("preset_mode", "integrated_synthesis")
+    c_mode = str(P.get("compactness_mode", "balanced") or "balanced").lower()
     w_bos = float(P.get("w_bos", 1.8) or 1.0)
     w_erisim = float(P.get("w_erisim", 1.8) or 1.0)
     w_yol = float(P.get("w_yol", 1.5) or 1.0)
     w_odak = float(P.get("w_odak", 1.8) or 1.0)
 
-    gw = {"lu": P["w_lu"], "yapi": P["w_yapi"], "dogal": P["w_dogal"], "geo": P["w_geo"] * 2.2}
+    geo_scale = 0.75 if c_mode == "organic" else (1.8 if c_mode == "strict" else 1.2)
+    gw = {"lu": P["w_lu"], "yapi": P["w_yapi"], "dogal": P["w_dogal"], "geo": max(0.0, P["w_geo"]) * geo_scale}
     allcols, colw = {}, {}
     for g, cols in groups.items():
         if gw.get(g, 0.0) <= 0.0:
@@ -1270,50 +1269,141 @@ def run_pipeline(P, log, progress):
     if not names:
         vecs = [[0.0] for _ in range(n)]
 
-    # Sanayi bütünlüğü, mezarlık bütünlüğü, boş/dolu arazi ayrımı ve 500m/1000m donatı erişim uyumu için Ward komşuluk afinitesi
+    # Sanayi bütünlüğü, büyük alan muafiyeti (baba alanlar), konut/donatı ölçeklendirmesi ve mekânsal kompaktlık
     cell_san = [(S[i]["lu"].get("sanayi", 0.0) / S[i]["lu_a"]) if S[i]["lu_a"] > 0 else 0.0 for i in range(n)]
+    cell_tar = [(S[i]["lu"].get("tarim", 0.0) / S[i]["lu_a"]) if S[i]["lu_a"] > 0 else 0.0 for i in range(n)]
+    cell_kon = [(S[i]["lu"].get("konut", 0.0) / S[i]["lu_a"]) if S[i]["lu_a"] > 0 else 0.0 for i in range(n)]
+    cell_don = [(S[i]["lu"].get("donati", 0.0) / S[i]["lu_a"]) if S[i]["lu_a"] > 0 else 0.0 for i in range(n)]
     cell_mez = [(S[i]["sub_lu"].get("mezarlik", 0.0) / S[i]["lu_a"]) if S[i]["lu_a"] > 0 else 0.0 for i in range(n)]
     cell_bos = [S[i]["bos_arazi_orani"] for i in range(n)]
     cell_don_m = [S[i].get("donati_mesafe_m") for i in range(n)]
 
+    cell_areas = [areas[i] for i in range(n)]
+    cell_cx = [pts[i][0] for i in range(n)]
+    cell_cy = [pts[i][1] for i in range(n)]
+    w_geo_mult = float(P.get("w_geo", 2.5) or 2.5)
+
+    # Hücreler arası ortak kenar uzunluklarını (shared_len) hesapla
+    shared_len = defaultdict(float)
+    for i_node, nbs_node in adj.items():
+        for j_node in nbs_node:
+            if j_node > i_node:
+                inter_geom = cells[i_node].intersection(cells[j_node])
+                slen = inter_geom.length() if inter_geom and not inter_geom.isEmpty() else 0.0
+                shared_len[(i_node, j_node)] = slen
+                shared_len[(j_node, i_node)] = slen
+
     def synthesis_affinity(mem_a, mem_b):
         factor = 1.0
-        san_a = sum(cell_san[i] for i in mem_a) / len(mem_a)
-        san_b = sum(cell_san[i] for i in mem_b) / len(mem_b)
-        # Sanayi alanlarının birbirinden ayrılmaması, kendi içinde bütünleşmesi:
+        cap_factor = 1.0
+
+        len_a = len(mem_a)
+        len_b = len(mem_b)
+        area_a = sum(cell_areas[i] for i in mem_a)
+        area_b = sum(cell_areas[i] for i in mem_b)
+
+        san_a = sum(cell_san[i] for i in mem_a) / len_a
+        san_b = sum(cell_san[i] for i in mem_b) / len_b
+        tar_a = sum(cell_tar[i] for i in mem_a) / len_a
+        tar_b = sum(cell_tar[i] for i in mem_b) / len_b
+        kon_a = sum(cell_kon[i] for i in mem_a) / len_a
+        kon_b = sum(cell_kon[i] for i in mem_b) / len_b
+
+        # 1. SANAYİ (OSB) BÜTÜNLÜĞÜ VE KESİN İZOLASYONU (M4 gibi ince şerit sarkmasını önler)
         if san_a >= 0.35 and san_b >= 0.35:
-            factor *= 0.38
-        elif (san_a >= 0.55 and san_b < 0.10) or (san_b >= 0.55 and san_a < 0.10):
-            factor *= 1.65
+            factor *= 0.04
+            cap_factor = 0.0  # Sanayi alanları alan tavanı yüzünden ASLA bölünmez ("büyük alanlar baba olsun")
+        elif (san_a >= 0.30 and kon_b >= 0.20) or (san_b >= 0.30 and kon_a >= 0.20):
+            # Sanayi ile konutun birleşmesi kesin engellenir!
+            factor *= 45.0
+        elif (san_a >= 0.50 and san_b < 0.10) or (san_b >= 0.50 and san_a < 0.10):
+            factor *= 8.0
 
-        # Mezarlık adalarının konut/ticaret ile karışmaması:
-        mez_a = sum(cell_mez[i] for i in mem_a) / len(mem_a)
-        mez_b = sum(cell_mez[i] for i in mem_b) / len(mem_b)
+        # 2. BÜYÜK TARIM OVASI BÜTÜNLÜĞÜ (A16 devasa tek parça korunsun)
+        if tar_a >= 0.60 and tar_b >= 0.60:
+            factor *= 0.08
+            cap_factor = 0.0  # Geniş tarım ovası alan tavanı yüzünden bölünmez!
+        elif (tar_a >= 0.50 and san_b >= 0.30) or (tar_b >= 0.50 and san_a >= 0.30):
+            factor *= 25.0
+
+        # 3. KONUT BAŞINA DÜŞEN DONATI ORANINA GÖRE ÖLÇEKLENDİRME (Plancı mantığı: donatı azsa bölgeler küçük/odaklı olsun)
+        if kon_a >= 0.35 and kon_b >= 0.35:
+            don_share = sum(cell_don[i] for i in mem_a + mem_b) / (len_a + len_b)
+            if don_share < 0.06:
+                # Donatı açığı çok yüksek; alt bölgeyi küçük tut ki donatı müdahale ihtiyacı odaklansın
+                cap_factor = 2.4
+            elif don_share >= 0.14:
+                cap_factor = 1.0
+
+        # 4. MEKÂNSAL KOMPAKTILIK & ŞEKİL KONTROLÜ (Morfolojik Koridor vs. Derli Toplu Form)
+        if w_geo_mult > 0.01:
+            sh_len = sum(shared_len.get((i, j), 0.0) for i in mem_a for j in mem_b)
+            min_dim = min(math.sqrt(area_a), math.sqrt(area_b))
+
+            if c_mode == "organic":
+                # Morfolojik / Doğal Koridor Modu: Vadi tabanları, dere koridorları, yol boyu ve tarihi dokuda uzamaya izin verir
+                if sh_len < 3.0:
+                    factor *= (1.0 + 0.6 * w_geo_mult)
+                elif sh_len > 0.20 * min_dim:
+                    factor *= 0.82
+            elif c_mode == "strict":
+                # Katı Geometrik Kompaktlık Modu: Dairesel/kübik süperblok zorlar
+                if sh_len < 15.0:
+                    factor *= (1.0 + 4.5 * w_geo_mult)
+                elif sh_len > 0.45 * min_dim:
+                    factor *= 0.60
+            else:
+                # Dengeli Mod (Standart kentsel planlama dengesi)
+                if sh_len < 8.0:
+                    factor *= (1.0 + 1.8 * w_geo_mult)
+                elif sh_len > 0.35 * min_dim:
+                    factor *= 0.70
+
+            cxa = sum(cell_cx[i] * cell_areas[i] for i in mem_a) / max(1.0, area_a)
+            cya = sum(cell_cy[i] * cell_areas[i] for i in mem_a) / max(1.0, area_a)
+            cxb = sum(cell_cx[i] * cell_areas[i] for i in mem_b) / max(1.0, area_b)
+            cyb = sum(cell_cy[i] * cell_areas[i] for i in mem_b) / max(1.0, area_b)
+            dist_cent = math.hypot(cxa - cxb, cya - cyb)
+            req = math.sqrt(area_a / math.pi) + math.sqrt(area_b / math.pi)
+
+            if c_mode == "organic":
+                # Vadi veya cadde boyunca 3.2 kata kadar uzamaya izin ver, suni dairesellik zorlama
+                if dist_cent > 3.2 * req:
+                    factor *= (1.0 + 0.35 * w_geo_mult * (dist_cent / max(1.0, req) - 2.5))
+            elif c_mode == "strict":
+                if dist_cent > 1.35 * req:
+                    factor *= (1.0 + 1.8 * w_geo_mult * (dist_cent / max(1.0, req) - 1.0))
+            else:
+                if dist_cent > 1.9 * req:
+                    factor *= (1.0 + 0.9 * w_geo_mult * (dist_cent / max(1.0, req) - 1.0))
+
+        # 5. MEZARLIK VE BOŞ ARAZİ AYRIMI
+        mez_a = sum(cell_mez[i] for i in mem_a) / len_a
+        mez_b = sum(cell_mez[i] for i in mem_b) / len_b
         if mez_a >= 0.35 and mez_b >= 0.35:
-            factor *= 0.30
+            factor *= 0.20
         elif (mez_a >= 0.40 and mez_b < 0.05) or (mez_b >= 0.40 and mez_a < 0.05):
-            factor *= 2.20
+            factor *= 5.0
 
-        # Boş arazisi çok olan (yeni plan çizilecek) alanlar ile dolu (yapılaşmış) alanların net ayrılması:
         if w_bos >= 1.4 or preset_mode in ("integrated_synthesis", "vacant_plan"):
-            bos_a = sum(cell_bos[i] for i in mem_a) / len(mem_a)
-            bos_b = sum(cell_bos[i] for i in mem_b) / len(mem_b)
+            bos_a = sum(cell_bos[i] for i in mem_a) / len_a
+            bos_b = sum(cell_bos[i] for i in mem_b) / len_b
             if abs(bos_a - bos_b) >= 0.42:
                 factor *= (1.0 + 0.45 * min(2.5, w_bos))
             elif (bos_a >= 0.72 and bos_b >= 0.72) or (bos_a <= 0.28 and bos_b <= 0.28):
-                factor *= 0.78
+                factor *= 0.75
 
-        # Donatı erişimi benzer olanların (~500m vs ~1000m) kendi içinde gruplanması:
-        if have["donati_erisim"] and (w_erisim >= 1.4 or preset_mode in ("integrated_synthesis", "access_school")):
+        # 6. DONATI ALANLARINA ERİŞİM
+        if have.get("donati_erisim") and (w_erisim >= 1.4 or preset_mode in ("integrated_synthesis", "access_school")):
             da_list = [cell_don_m[i] for i in mem_a if cell_don_m[i] is not None]
             db_list = [cell_don_m[i] for i in mem_b if cell_don_m[i] is not None]
             if da_list and db_list:
                 da = sum(da_list) / len(da_list)
                 db = sum(db_list) / len(db_list)
-                # Biri <=500m yürüme mesafesinde, diğeri >850m uzaklıktaysa birleşmeyi zorlaştır
                 if (da <= 500.0 and db >= 850.0) or (db <= 500.0 and da >= 850.0):
-                    factor *= 1.55
-        return factor
+                    factor *= 1.85
+
+        return factor, cap_factor
 
     tick(progress, 70)
     node_w = [math.sqrt(a) for a in areas]
@@ -1335,6 +1425,15 @@ def run_pipeline(P, log, progress):
         zones.append(zone_stats(lbl, ids, geom, S, areas, ext_kinds, allcols=allcols))
     if len(zones) >= 2:
         prune_zone_road_tails(zones, filter_medians=filter_medians)
+        zones = absorb_tiny_residual_zones(
+            zones, min_cells=3, min_area=25000.0, S=S, areas=areas, ext_kinds=ext_kinds, allcols=allcols
+        )
+        enforce_single_part_contiguous_zones(zones)
+        new_labels = [0] * len(cells)
+        for z in zones:
+            for cid in z["ids"]:
+                new_labels[cid] = z["l"]
+        labels = new_labels
     if res_block_pops:
         assign_zone_populations_from_blocks(zones, res_block_pops)
     maxd = 1.0
@@ -1507,8 +1606,6 @@ def refine_zone_compactness(cells, adj, labels, S):
         lbl_counts = Counter(labels)
         for i in range(n):
             cur = labels[i]
-            if lbl_counts[cur] <= 1:
-                continue
             by_lbl = defaultdict(float)
             for j in adj.get(i, ()):
                 by_lbl[labels[j]] += shared_len.get((i, j), 0.0)
@@ -1518,10 +1615,22 @@ def refine_zone_compactness(cells, adj, labels, S):
                 continue
             best_lbl, best_l = max(other_items, key=lambda kv: kv[1])
 
-            is_strip_or_empty = (pps[i] < 0.22 or thicks[i] < 26.0 or S[i]["n"] == 0)
+            if lbl_counts[cur] <= 1:
+                # 1 hucrelik tekil kalmis artik ada (M9 gibi): kesinlikle en uzun sinir paylastigi komsuya kat
+                labels[i] = best_lbl
+                lbl_counts[cur] -= 1
+                lbl_counts[best_lbl] += 1
+                changed = True
+                continue
+
+            is_strip_or_empty = (pps[i] < 0.32 or thicks[i] < 36.0 or S[i]["n"] == 0)
             is_disconnected = (same_l < 0.5 and best_l > 2.0)
-            is_narrow_throat = (is_strip_or_empty and (same_l < 38.0 or same_l < 0.16 * perims[i]) and best_l > max(same_l * 1.6, 18.0))
-            is_surrounded = (best_l > 0.62 * perims[i] and same_l < 0.18 * perims[i])
+            is_narrow_throat = (
+                is_strip_or_empty
+                and (same_l < 45.0 or same_l < 0.22 * perims[i])
+                and best_l > max(same_l * 1.3, 15.0)
+            )
+            is_surrounded = (best_l > 0.50 * perims[i] and same_l < 0.25 * perims[i])
 
             if is_disconnected or is_narrow_throat or is_surrounded:
                 labels[i] = best_lbl
@@ -1535,54 +1644,77 @@ def refine_zone_compactness(cells, adj, labels, S):
     return labels
 
 
-def _reassign_minor_disconnected_parts(zones):
-    """Bir alt bölgenin ana poligonundan kopuk küçük poligon parçalarını (başka bölgenin içinde siyah çizgi oluşturan adacıkları) komşusuna katar."""
+def enforce_single_part_contiguous_zones(zones, max_passes=5):
+    """
+    Her alt bolgenin KESINLIKLE tek parca (single contiguous polygon) olmasini garantiler.
+    Hicbir bolgenin baska bir yerde (or. M8 altinda sahte bir M3 adacigi) ikinci bir kopuk parcasi kalamaz.
+    Butun ikincil parcalar en uzun sinir paylastigi veya en yakin temas ettigi komsuya devredilir.
+    """
     if len(zones) < 2:
         return
-    for i, z in enumerate(zones):
-        parts = [strip_polygon_holes(p) for p in poly_parts(z["geom"]) if p and not p.isEmpty() and p.area() > 1.0]
-        if len(parts) <= 1:
-            if parts:
-                g0 = parts[0]
-                g0.convertToMultiType()
-                z["geom"] = g0
-                z["area"] = g0.area()
-            continue
-        parts.sort(key=lambda p: p.area(), reverse=True)
-        main_part = parts[0]
-        kept = [main_part]
-        for extra in parts[1:]:
-            best_j = -1
-            best_sh = -1.0
-            for j, oz in enumerate(zones):
-                if j == i:
-                    continue
-                if not oz["geom"].boundingBox().intersects(extra.boundingBox()):
-                    continue
-                inter = extra.intersection(oz["geom"])
-                sh = inter.length() if inter and not inter.isEmpty() else 0.0
-                if sh > best_sh:
-                    best_sh = sh
-                    best_j = j
-            if best_j >= 0 and best_sh > 0.5:
-                ug = strip_polygon_holes(QgsGeometry.unaryUnion([zones[best_j]["geom"], extra]))
-                if ug and not ug.isEmpty():
-                    ug.convertToMultiType()
-                    zones[best_j]["geom"] = ug
-                    zones[best_j]["area"] = ug.area()
-            elif extra.area() >= 0.35 * main_part.area():
-                kept.append(extra)
-        new_g = strip_polygon_holes(QgsGeometry.unaryUnion(kept) if len(kept) > 1 else kept[0])
-        if new_g and not new_g.isEmpty():
-            new_g.convertToMultiType()
-            z["geom"] = new_g
-            z["area"] = new_g.area()
+    for _p in range(max_passes):
+        any_multi = False
+        for i, z in enumerate(zones):
+            parts = [strip_polygon_holes(p) for p in poly_parts(z["geom"]) if p and not p.isEmpty() and p.area() > 5.0]
+            if len(parts) <= 1:
+                if parts:
+                    g0 = parts[0]
+                    g0.convertToMultiType()
+                    z["geom"] = g0
+                    z["area"] = g0.area()
+                continue
+            any_multi = True
+            parts.sort(key=lambda p: p.area(), reverse=True)
+            main_part = parts[0]
+            z["geom"] = main_part
+            z["area"] = main_part.area()
+
+            for extra in parts[1:]:
+                best_j = -1
+                best_score = -1.0
+                extra_buf = extra.buffer(4.0, 4)
+                for j, oz in enumerate(zones):
+                    if j == i:
+                        continue
+                    if not oz["geom"].boundingBox().intersects(extra_buf.boundingBox()):
+                        continue
+                    inter = extra_buf.intersection(oz["geom"])
+                    if inter and not inter.isEmpty():
+                        score = inter.area()
+                        if score > best_score:
+                            best_score = score
+                            best_j = j
+                if best_j < 0:
+                    min_dist = float("inf")
+                    for j, oz in enumerate(zones):
+                        if j == i:
+                            continue
+                        d = extra.distance(oz["geom"])
+                        if d < min_dist:
+                            min_dist = d
+                            best_j = j
+                if best_j >= 0:
+                    ug = strip_polygon_holes(QgsGeometry.unaryUnion([zones[best_j]["geom"], extra]))
+                    if ug and not ug.isEmpty():
+                        if not ug.isGeosValid():
+                            ug = ug.makeValid()
+                        ug = strip_polygon_holes(ug)
+                        ug.convertToMultiType()
+                        zones[best_j]["geom"] = ug
+                        zones[best_j]["area"] = ug.area()
+        if not any_multi:
+            break
 
 
-def _heal_inward_slits_and_holes(zones, close_m=6.5):
+def _reassign_minor_disconnected_parts(zones):
+    """Geriye donuk uyumluluk shimi: enforce_single_part_contiguous_zones cagirir."""
+    enforce_single_part_contiguous_zones(zones)
+
+
+def _heal_inward_slits_and_holes(zones, close_m=8.0):
     """
-    Bölge poligonlarının içine doğru saplanan ince siyah yarıkları (slit/crack) ve iç boşlukları (interior holes)
-    morfolojik kapama ile tespit edip tamamen doldurur; böylece bölge içlerinde alakasız siyah çizgiler oluşmaz.
+    Bolge poligonlarinin icine dogru saplanan ince siyah yariklari (slit/crack) ve ic bosluklari (interior holes)
+    morfolojik kapama ile tespit edip tamamen doldurur; boylece bolge iclerinde alakasiz siyah cizgiler olusmaz.
     """
     for i, z in enumerate(zones):
         g = strip_polygon_holes(z["geom"])
@@ -1605,7 +1737,6 @@ def _heal_inward_slits_and_holes(zones, close_m=6.5):
                 if slits:
                     slit_u = QgsGeometry.unaryUnion(slits)
                     g = strip_polygon_holes(QgsGeometry.unaryUnion([g, slit_u]))
-                    # Eğer bu yarık komşu bir bölgenin ince dikeni idiyse komşudan düş
                     for j, oz in enumerate(zones):
                         if j == i:
                             continue
@@ -1626,10 +1757,11 @@ def _heal_inward_slits_and_holes(zones, close_m=6.5):
 
 def prune_zone_road_tails(zones, filter_medians=True):
     """
-    Alt bölge poligonlarında:
-    1) İç delikleri (interior holes) ve kopuk adacıkları temizler,
-    2) Dışarıya doğru uzanan ince uzun yol koridoru kuyruklarını (ör. M25) morfolojik açma ile budayıp komşu bölgeye katar,
-    3) Bölge içine saplanan ince siyah yarıkları (slit/crack) kapatarak pürüzsüz, iç çizgisiz poligonlar üretir.
+    Alt bolge poligonlarinda:
+    1) Ic delikleri (interior holes) ve kopuk adaciklari temizler,
+    2) Disariya dogru uzanan ince uzun yol koridoru kuyruklarini ve sivri ucgen burunlari/kuyruklari
+       (or. Gorsel 3'teki dar ucgen alan) morfolojik acma ile budayip komsu bolgeye katar,
+    3) Bolge icine saplanan ince siyah yariklari (slit/crack) kapatir.
     """
     for z in zones:
         g = strip_polygon_holes(z["geom"])
@@ -1637,15 +1769,16 @@ def prune_zone_road_tails(zones, filter_medians=True):
         z["geom"] = g
         z["area"] = g.area()
 
-    _reassign_minor_disconnected_parts(zones)
+    enforce_single_part_contiguous_zones(zones)
 
     if filter_medians:
         for i, z in enumerate(zones):
             g = strip_polygon_holes(z["geom"])
             z_area = g.area()
-            if z_area < 20000.0:
+            if z_area < 15000.0:
                 continue
-            opened = g.buffer(-13.0, 8).buffer(14.5, 8)
+            # Morfolojik asinma (18m) ve genisleme (20m): 36m'den dar tum boyun ve burunlari yakalar
+            opened = g.buffer(-18.0, 8).buffer(20.0, 8)
             if opened is None or opened.isEmpty():
                 continue
             diff = g.difference(opened)
@@ -1655,20 +1788,22 @@ def prune_zone_road_tails(zones, filter_medians=True):
             for part in poly_parts(diff):
                 pa = part.area()
                 plen = part.length()
-                if pa < 25.0 or plen <= 0.0 or pa > 0.18 * z_area:
+                if pa < 25.0 or plen <= 0.0 or pa > 0.25 * z_area:
                     continue
                 p_thick = (2.0 * pa) / plen
                 p_pp = (4.0 * math.pi * pa) / (plen * plen)
-                if p_thick < 26.0 and p_pp < 0.22:
+                # Gorsel 3: Daracik ucgen burunlar (p_pp ~ 0.35-0.45) ve ince boyunlar (p_thick < 38m)
+                if p_thick < 38.0 and (p_pp < 0.46 or p_thick < 26.0):
                     best_j = -1
                     best_sh = 0.0
+                    part_buf = part.buffer(3.5, 4)
                     for j, oz in enumerate(zones):
                         if j == i:
                             continue
-                        if not oz["geom"].boundingBox().intersects(part.boundingBox()):
+                        if not oz["geom"].boundingBox().intersects(part_buf.boundingBox()):
                             continue
-                        inter = part.intersection(oz["geom"])
-                        sh = inter.length() if inter and not inter.isEmpty() else 0.0
+                        inter = part_buf.intersection(oz["geom"])
+                        sh = inter.area() if inter and not inter.isEmpty() else 0.0
                         if sh > best_sh:
                             best_sh = sh
                             best_j = j
@@ -1677,7 +1812,7 @@ def prune_zone_road_tails(zones, filter_medians=True):
             if tails_to_remove:
                 rem_union = QgsGeometry.unaryUnion([t[0] for t in tails_to_remove])
                 new_g = g.difference(rem_union)
-                if new_g and not new_g.isEmpty() and new_g.area() > 0.5 * z_area:
+                if new_g and not new_g.isEmpty() and new_g.area() > 0.45 * z_area:
                     if not new_g.isGeosValid():
                         new_g = new_g.makeValid()
                     new_g = strip_polygon_holes(new_g)
@@ -1694,13 +1829,87 @@ def prune_zone_road_tails(zones, filter_medians=True):
                             zones[best_j]["geom"] = ug
                             zones[best_j]["area"] = ug.area()
 
-    _heal_inward_slits_and_holes(zones, close_m=6.5)
-    _reassign_minor_disconnected_parts(zones)
+    _heal_inward_slits_and_holes(zones, close_m=8.0)
+    enforce_single_part_contiguous_zones(zones)
     for z in zones:
         g = strip_polygon_holes(z["geom"])
         g.convertToMultiType()
         z["geom"] = g
         z["area"] = g.area()
+
+
+def absorb_tiny_residual_zones(zones, min_cells=3, min_area=25000.0, S=None, areas=None, ext_kinds=None, allcols=None):
+    """
+    1-2 hucrelik veya sacma kucuklukteki mikroskobik artik bolgeleri (or. M9 tekil ada bolgesi)
+    en uzun sinir paylastigi baskin komsu bolgeye katar ve bolgeleri ardisik (M1..MK) olarak yeniden numaralandirir.
+    """
+    if len(zones) <= 2:
+        return zones
+
+    mean_area = sum(z["area"] for z in zones) / len(zones)
+    area_thresh = min(min_area, 0.22 * mean_area)
+
+    absorbed_any = True
+    while absorbed_any and len(zones) > 2:
+        absorbed_any = False
+        for i, z in enumerate(zones):
+            n_cells = len(z.get("ids", []))
+            z_area = z.get("area", 0.0)
+            is_micro = (n_cells < min_cells or z_area < area_thresh)
+            if not is_micro:
+                continue
+
+            best_j = -1
+            best_sh = -1.0
+            z_geom_buf = z["geom"].buffer(4.0, 4)
+            for j, oz in enumerate(zones):
+                if j == i:
+                    continue
+                if not oz["geom"].boundingBox().intersects(z_geom_buf.boundingBox()):
+                    continue
+                inter = z_geom_buf.intersection(oz["geom"])
+                if inter and not inter.isEmpty():
+                    sh = inter.area()
+                    if sh > best_sh:
+                        best_sh = sh
+                        best_j = j
+            if best_j < 0:
+                min_d = float("inf")
+                for j, oz in enumerate(zones):
+                    if j == i:
+                        continue
+                    d = z["geom"].distance(oz["geom"])
+                    if d < min_d:
+                        min_d = d
+                        best_j = j
+
+            if best_j >= 0:
+                target_z = zones[best_j]
+                target_z["ids"] = sorted(set(target_z["ids"] + z.get("ids", [])))
+                merged_geom = strip_polygon_holes(QgsGeometry.unaryUnion([target_z["geom"], z["geom"]]))
+                if merged_geom and not merged_geom.isEmpty():
+                    if not merged_geom.isGeosValid():
+                        merged_geom = merged_geom.makeValid()
+                    merged_geom = strip_polygon_holes(merged_geom)
+                    merged_geom.convertToMultiType()
+                    target_z["geom"] = merged_geom
+                    target_z["area"] = merged_geom.area()
+                target_z["pop"] = target_z.get("pop", 0) + z.get("pop", 0)
+                if S is not None and areas is not None and ext_kinds is not None:
+                    new_st = zone_stats(target_z["l"], target_z["ids"], target_z["geom"], S, areas, ext_kinds, allcols=allcols)
+                    target_z.update(new_st)
+                zones.pop(i)
+                absorbed_any = True
+                break
+
+    # Kalan bolgeleri ardisik olarak yeniden indeksle (M1..MK)
+    for idx, z in enumerate(zones):
+        new_kodu = f"M{idx + 1}"
+        z["l"] = idx
+        z["kod"] = new_kodu
+        z["name"] = new_kodu
+
+    return zones
 
 
 def build_zone_neighbors(zones, cell_adj, cell_labels):
@@ -1730,7 +1939,7 @@ def format_z_feature_diff(col_key, z, nb, nb_kod, include_codes=True):
     e_nb = nb.get("ext") or {}
 
     if short_key == "taks":
-        return f"TAKS yoğunluk farkı (%{z['taks']*100:.1f} vs {nb_kod}'de %{nb['taks']*100:.1f})"
+        return f"TAKS yoğunluk farkı (%{z['taks'] * 100:.1f} vs {nb_kod}'de %{nb['taks'] * 100:.1f})"
     if short_key == "yog":
         return f"yapı yoğunluğu farkı ({z['ndens']:.1f} bina/ha vs {nb_kod}'de {nb['ndens']:.1f} bina/ha)"
     if short_key == "tane":
@@ -2253,7 +2462,7 @@ def build_concise_rationale(z, ayrim_nedeni=""):
         top = [(k, int(round(v * 100))) for k, v in sorted(p.items(), key=lambda kv: -kv[1]) if v >= 0.12]
         if top:
             details.append(", ".join(f"%{v} {k}" for k, v in top[:2]) + " kullanımı")
-    details.append(f"%{z['taks']*100:.1f} TAKS yoğunluğu")
+    details.append(f"%{z['taks'] * 100:.1f} TAKS yoğunluğu")
     if z["kat"] is not None:
         details.append(f"alan ağırlıklı ortalama {z['kat']:.1f} kat yüksekliği")
     if z["yd_dom"]:
@@ -2400,10 +2609,14 @@ def compute_vulnerability(z):
     V_genel = 0.6 * V_deprem + 0.4 * V_sel
 
     def tier(score):
-        if score < 1.8: return "Çok Düşük"
-        if score < 2.6: return "Düşük"
-        if score < 3.5: return "Orta"
-        if score < 4.4: return "Yüksek"
+        if score < 1.8:
+            return "Çok Düşük"
+        if score < 2.6:
+            return "Düşük"
+        if score < 3.5:
+            return "Orta"
+        if score < 4.4:
+            return "Yüksek"
         return "Çok Yüksek"
 
     return {
@@ -2859,7 +3072,7 @@ def export_excel_workbook(target_path, records, quick_records=None, P=None, zone
         "Kisa_Metrik_Ozeti", "Kisa_Birlestirme_ve_Ayrim_Ozeti", "Kisa_Komsu_Ayrim_Nedeni",
         "Genel_Kirilganlik_Sinifi", "Mudahale_Karari", "Plan_Karsiligi"
     ]
-    _populate_sheet(ws1, records, col_keys=quick_Sheet_cols, freeze_cell="D2")
+    _populate_sheet(ws1, q_recs, col_keys=quick_Sheet_cols, freeze_cell="D2")
 
     # Sayfa 2: Temel Sayısal Metrikler Tablosu (Sayısal analiz / grafik için)
     ws2 = wb.create_sheet(title="2_Sayisal_Planlama_Tablosu")

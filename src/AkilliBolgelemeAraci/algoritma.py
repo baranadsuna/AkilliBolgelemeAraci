@@ -282,10 +282,21 @@ def ward_merge(vecs, node_w, areas, adj, target_k, area_cap=None, cap_pow=2.0, e
             d = va[k] - vb[k]
             d2 += d * d
         c = W[a] * W[b] / (W[a] + W[b]) * (d2 + eps)
+        # Kucuk hucrelerin / tekil adalarin erken asamada komsusuna kaynasmasini tesvik et (M9 gibi tek ada bolge kalmasini onler)
+        if len(members[a]) <= 1 or len(members[b]) <= 1:
+            c *= 0.35
+        elif A[a] < 20000.0 or A[b] < 20000.0:
+            c *= 0.60
+        cap_factor = 1.0
         if affinity_fn is not None:
-            c *= affinity_fn(members[a], members[b])
-        if area_cap:
-            c *= 1.0 + ((A[a] + A[b]) / area_cap) ** cap_pow
+            aff = affinity_fn(members[a], members[b])
+            if isinstance(aff, (tuple, list)):
+                c *= aff[0]
+                cap_factor = aff[1] if len(aff) > 1 else 1.0
+            else:
+                c *= aff
+        if area_cap and cap_factor > 0.0:
+            c *= 1.0 + cap_factor * (((A[a] + A[b]) / area_cap) ** cap_pow)
         return c
 
     heap = []
