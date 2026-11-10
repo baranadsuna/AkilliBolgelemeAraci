@@ -1,4 +1,4 @@
-# Urban Zoning and Vulnerability Analysis Tool (v1.9.0)
+# Urban Zoning and Vulnerability Analysis Tool (v1.9.1)
 ### Akıllı Bölgeleme ve Afet Kırılganlık Analiz Aracı
 
 **Mekânsal Planlar Yapım Yönetmeliği (MPYY) Esaslarına Dayalı Çok Kriterli Mekânsal Ward Kümelemesi, 3B Kırılganlık Sentezi ve İmar Planı Karar Destek Sistemi**
@@ -14,6 +14,15 @@
 ## 1. Genel Bakış ve Temel Amaç
 
 Bu eklenti; şehir ve bölge planlama ofisleri, belediyeler, araştırmacılar ve planlama stüdyosu öğrencileri için çalışma alanını morfolojik, işlevsel, yapısal ve afet kırılganlığı göstergelerine göre kompakt ve topolojik açıdan temiz alt planlama bölgelerine (`M1..MK` veya `A1..AK`) ayıran, sıfır sentetik veri prensibiyle çalışan kapsamlı bir karar destek paketidir.
+
+### v1.9.1 ile Gelen Başlıca Yenilikler:
+1. **QGIS Plugin Hub Django ConfigParser Ayrıştırma Zırhı:**
+   - Resmi QGIS Eklenti Havuzu (`plugins.qgis.org`) yükleme motorunda meydana gelen `InterpolationSyntaxError: '%' must be followed by '%' or '('` hatası giderildi.
+   - `metadata.txt` içerisindeki tüm serbest yüzde işaretleri standart Django parser uyumlu hâle getirildi; eklentinin eklenti yöneticisi ve web arayüzünde eksiksiz ve hatasız listelenmesi sağlandı.
+2. **Yepyeni Yüksek Estetikli Vektör Marka Kimliği (icon.svg & icon.png):**
+   - Eklenti logosu modern kentsel planlama ve morfolojik bölgeleme prensipleriyle baştan tasarlandı.
+   - 4 ana kentsel fonksiyon karesi (MİA / Ticaret mercanı, Konut kehribarı, Donatı/Ekoloji zümrüdü, Akıllı Kent camgöbeği), 3 boyutlu izometrik kot katmanları, parlayan yol ağı omurgası ve karar destek ağırlık merkezi düğümleriyle zenginleştirildi.
+   - QGIS araç çubuğunda (16px, 24px, 32px, 64px) ve web portalında ultra net görünüm için raster `icon.png` eşliği eklendi.
 
 ### v1.9.0 ile Gelen Başlıca Yenilikler:
 1. **Pedagojik ve Etkileşimli Ağırlık Seçim Mekanizması:**
