@@ -1,0 +1,276 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <!-- Background Squircle Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#090d16"/>
+    </linearGradient>
+
+    <!-- Glassmorphic Rim Glow -->
+    <linearGradient id="rimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.8"/>
+      <stop offset="35%" stop-color="#818cf8" stop-opacity="0.3"/>
+      <stop offset="70%" stop-color="#c084fc" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.6"/>
+    </linearGradient>
+
+    <!-- Drop Shadows -->
+    <filter id="shadowFilter" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+    <filter id="glowFilter" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3.5" flood-color="#38bdf8" flood-opacity="0.75"/>
+    </filter>
+    <filter id="buildingShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#020617" flood-opacity="0.4"/>
+    </filter>
+
+    <!-- 1. Commercial / Mixed Core (Coral / Rose Red) Gradients -->
+    <linearGradient id="comTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fb7185"/>
+      <stop offset="100%" stop-color="#e11d48"/>
+    </linearGradient>
+    <linearGradient id="comLeft" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#be123c"/>
+      <stop offset="100%" stop-color="#881337"/>
+    </linearGradient>
+    <linearGradient id="comRight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#9f1239"/>
+      <stop offset="100%" stop-color="#4c0519"/>
+    </linearGradient>
+
+    <!-- 2. Residential Fabric (Golden Amber / Warm Ochre) Gradients -->
+    <linearGradient id="resTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="resLeft" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#b45309"/>
+      <stop offset="100%" stop-color="#78350f"/>
+    </linearGradient>
+    <linearGradient id="resRight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#92400e"/>
+      <stop offset="100%" stop-color="#451a03"/>
+    </linearGradient>
+
+    <!-- 3. Ecological / Green Infrastructure (Emerald / Mint) Gradients -->
+    <linearGradient id="grnTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="grnLeft" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#047857"/>
+      <stop offset="100%" stop-color="#064e3b"/>
+    </linearGradient>
+    <linearGradient id="grnRight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#065f46"/>
+      <stop offset="100%" stop-color="#022c22"/>
+    </linearGradient>
+
+    <!-- 4. Smart Tech / Water Corridor / Civic Buffer (Electric Cyan / Blue) Gradients -->
+    <linearGradient id="bluTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="bluLeft" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0369a1"/>
+      <stop offset="100%" stop-color="#075985"/>
+    </linearGradient>
+    <linearGradient id="bluRight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0c4a6e"/>
+    </linearGradient>
+
+    <!-- Base Multi-Criteria Strata Slab -->
+    <linearGradient id="basePlate" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="basePlateRim" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#64748b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <!-- Road / Boundary Corridor Glow -->
+    <linearGradient id="roadCore" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="50%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Container App Squircle with Glassmorphism Border -->
+  <rect x="4" y="4" width="120" height="120" rx="26" ry="26" fill="url(#bgGrad)"/>
+  <rect x="4" y="4" width="120" height="120" rx="26" ry="26" fill="none" stroke="url(#rimGrad)" stroke-width="2.2"/>
+
+  <!-- Subtle Internal Grid Matrix Overlay -->
+  <g opacity="0.08" stroke="#ffffff" stroke-width="0.8">
+    <line x1="24" y1="16" x2="24" y2="112"/>
+    <line x1="44" y1="16" x2="44" y2="112"/>
+    <line x1="64" y1="16" x2="64" y2="112"/>
+    <line x1="84" y1="16" x2="84" y2="112"/>
+    <line x1="104" y1="16" x2="104" y2="112"/>
+    <line x1="16" y1="24" x2="112" y2="24"/>
+    <line x1="16" y1="44" x2="112" y2="44"/>
+    <line x1="16" y1="64" x2="112" y2="64"/>
+    <line x1="16" y1="84" x2="112" y2="84"/>
+    <line x1="16" y1="104" x2="112" y2="104"/>
+  </g>
+
+  <!-- MAIN ISOMETRIC URBAN MORPHOLOGY CLUSTER -->
+  <g transform="translate(0, 4)" filter="url(#shadowFilter)">
+    <!-- Base 3D Stratum Slab (Pedestal) -->
+    <!-- Base Lower Facets -->
+    <polygon points="64,103 108,78 108,83 64,108" fill="#0f172a"/>
+    <polygon points="64,103 20,78 20,83 64,108" fill="#090d16"/>
+    <!-- Base Top Plate -->
+    <polygon points="64,28 108,53 108,78 64,103 20,78 20,53" fill="url(#basePlate)"/>
+    <polygon points="64,28 108,53 64,78 20,53" fill="#1e293b" opacity="0.6"/>
+
+    <!-- ZONE 1: NORTH SECTOR — COMMERCIAL / HIGH-RISE CBD (Rose / Coral) -->
+    <g id="zone-commercial">
+      <!-- Sector Footprint Tile -->
+      <polygon points="64,30 102,52 65,73 26,51" fill="url(#comTop)" opacity="0.3"/>
+      <!-- Tall Modern Central Tower (M1 Core) -->
+      <g filter="url(#buildingShadow)">
+        <!-- Tower Extrusion Sides -->
+        <polygon points="64,20 72,25 72,52 64,47" fill="url(#comRight)"/>
+        <polygon points="56,25 64,20 64,47 56,52" fill="url(#comLeft)"/>
+        <!-- Tower Roof -->
+        <polygon points="64,14 72,19 64,24 56,19" fill="#ffe4e6"/>
+        <!-- Roof Heli-Pad / Crown Feature -->
+        <circle cx="64" cy="19" r="2.2" fill="#e11d48"/>
+        <!-- Tower Facade Windows / Floor Lines -->
+        <line x1="58" y1="28" x2="63" y2="25" stroke="#fecdd3" stroke-width="0.8" opacity="0.8"/>
+        <line x1="58" y1="34" x2="63" y2="31" stroke="#fecdd3" stroke-width="0.8" opacity="0.8"/>
+        <line x1="58" y1="40" x2="63" y2="37" stroke="#fecdd3" stroke-width="0.8" opacity="0.8"/>
+        <line x1="58" y1="46" x2="63" y2="43" stroke="#fecdd3" stroke-width="0.8" opacity="0.8"/>
+        <line x1="65" y1="25" x2="70" y2="28" stroke="#fda4af" stroke-width="0.8" opacity="0.8"/>
+        <line x1="65" y1="31" x2="70" y2="34" stroke="#fda4af" stroke-width="0.8" opacity="0.8"/>
+        <line x1="65" y1="37" x2="70" y2="40" stroke="#fda4af" stroke-width="0.8" opacity="0.8"/>
+        <line x1="65" y1="43" x2="70" y2="46" stroke="#fda4af" stroke-width="0.8" opacity="0.8"/>
+      </g>
+      <!-- Flanking Commercial Mid-Rise Block -->
+      <g>
+        <polygon points="46,36 52,40 52,50 46,46" fill="url(#comLeft)"/>
+        <polygon points="52,40 57,37 57,47 52,50" fill="url(#comRight)"/>
+        <polygon points="46,36 52,32 57,37 52,40" fill="#fecdd3"/>
+      </g>
+    </g>
+
+    <!-- ZONE 2: EAST SECTOR — RESIDENTIAL NEIGHBORHOOD / SUPERBLOCK (Amber / Gold) -->
+    <g id="zone-residential">
+      <!-- Sector Footprint Tile -->
+      <polygon points="68,75 106,53 106,75 68,97" fill="url(#resTop)" opacity="0.25"/>
+      <!-- Residential Perimeter Blocks -->
+      <g filter="url(#buildingShadow)">
+        <!-- Block A (Mid-Rise Courtyard) -->
+        <polygon points="76,55 86,49 86,60 76,66" fill="url(#resLeft)"/>
+        <polygon points="86,49 96,55 96,66 86,60" fill="url(#resRight)"/>
+        <polygon points="76,55 86,49 96,55 86,61" fill="url(#resTop)"/>
+        <!-- Inner Pitched Roof / Loft Detail -->
+        <polygon points="79,55 86,51 93,55 86,59" fill="#fef3c7"/>
+        <line x1="86" y1="51" x2="86" y2="59" stroke="#b45309" stroke-width="0.9"/>
+      </g>
+      <g filter="url(#buildingShadow)">
+        <!-- Block B (Terraced Housing) -->
+        <polygon points="72,69 80,64 80,73 72,78" fill="url(#resLeft)"/>
+        <polygon points="80,64 88,69 88,78 80,73" fill="url(#resRight)"/>
+        <polygon points="72,69 80,64 88,69 80,74" fill="#fde68a"/>
+      </g>
+      <g filter="url(#buildingShadow)">
+        <!-- Block C (Compact Cube) -->
+        <polygon points="88,69 94,65 94,74 88,78" fill="url(#resLeft)"/>
+        <polygon points="94,65 100,69 100,77 94,74" fill="url(#resRight)"/>
+        <polygon points="88,69 94,65 100,69 94,72" fill="#fbbf24"/>
+      </g>
+    </g>
+
+    <!-- ZONE 3: WEST SECTOR — ECOLOGICAL GREENWAY & PARK RESERVE (Emerald / Mint) -->
+    <g id="zone-ecological">
+      <!-- Sector Footprint Tile -->
+      <polygon points="22,53 60,75 60,97 22,75" fill="url(#grnTop)" opacity="0.25"/>
+      <!-- Stepped Terraced Green Space / Hillside Park -->
+      <g filter="url(#buildingShadow)">
+        <!-- Lower Ecological Terrace -->
+        <polygon points="26,60 38,53 48,59 36,66" fill="url(#grnTop)"/>
+        <polygon points="26,60 36,66 36,70 26,64" fill="url(#grnLeft)"/>
+        <polygon points="36,66 48,59 48,63 36,70" fill="url(#grnRight)"/>
+        <!-- Upper Canopy Mound (Organic Contour) -->
+        <polygon points="30,58 37,54 44,58 37,62" fill="#6ee7b7"/>
+        <!-- Stylized Micro Trees (Isometric Canopies) -->
+        <circle cx="34" cy="56" r="2.5" fill="#10b981" stroke="#047857" stroke-width="0.6"/>
+        <circle cx="40" cy="58" r="2.8" fill="#34d399" stroke="#065f46" stroke-width="0.6"/>
+        <circle cx="36" cy="61" r="2.2" fill="#059669" stroke="#022c22" stroke-width="0.6"/>
+      </g>
+      <!-- Civic Sports / Open Field Poly -->
+      <polygon points="40,66 50,60 56,64 46,69" fill="#a7f3d0" opacity="0.9"/>
+      <polygon points="40,66 46,69 46,72 40,69" fill="#059669"/>
+      <polygon points="46,69 56,64 56,67 46,72" fill="#047857"/>
+    </g>
+
+    <!-- ZONE 4: SOUTH SECTOR — SMART WATERFRONT / 3D VULNERABILITY BASIN (Electric Cyan) -->
+    <g id="zone-innovation">
+      <!-- High-Tech Waterfront / Terminal Complex -->
+      <g filter="url(#buildingShadow)">
+        <!-- Terminal Pavilion -->
+        <polygon points="56,79 64,74 72,79 64,84" fill="#e0f2fe"/>
+        <polygon points="56,79 64,84 64,91 56,86" fill="url(#bluLeft)"/>
+        <polygon points="64,84 72,79 72,86 64,91" fill="url(#bluRight)"/>
+        <!-- Smart Grid / Solar Canopy Pattern on Roof -->
+        <line x1="59" y1="78" x2="69" y2="80" stroke="#0284c7" stroke-width="0.8"/>
+        <line x1="61" y1="81" x2="67" y2="76" stroke="#0284c7" stroke-width="0.8"/>
+      </g>
+      <!-- 3D Slope / Buffer Contours (Vulnerability Strata) -->
+      <path d="M 44,81 Q 64,94 84,81" fill="none" stroke="#38bdf8" stroke-width="1.2" opacity="0.85"/>
+      <path d="M 40,86 Q 64,101 88,86" fill="none" stroke="#0ea5e9" stroke-width="1.0" opacity="0.7"/>
+    </g>
+
+    <!-- ARTERIAL ROAD NETWORK & ZONING SEPARATION CORRIDORS -->
+    <g id="road-network">
+      <!-- Glow Underlay for Roads -->
+      <g stroke="#38bdf8" stroke-linecap="round" stroke-linejoin="round" opacity="0.4" filter="url(#glowFilter)">
+        <line x1="64" y1="30" x2="64" y2="74" stroke-width="5.0"/>
+        <line x1="26" y1="51" x2="102" y2="52" stroke-width="4.5"/>
+        <line x1="22" y1="75" x2="64" y2="74" stroke-width="4.5"/>
+        <line x1="64" y1="74" x2="106" y2="75" stroke-width="4.5"/>
+        <line x1="64" y1="74" x2="64" y2="103" stroke-width="4.5"/>
+      </g>
+      <!-- Clean Sharp White Arterial Roadways -->
+      <g stroke="url(#roadCore)" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="64" y1="32" x2="64" y2="74" stroke-width="2.8"/>
+        <line x1="30" y1="52" x2="98" y2="52" stroke-width="2.6"/>
+        <line x1="28" y1="74" x2="64" y2="74" stroke-width="2.6"/>
+        <line x1="64" y1="74" x2="100" y2="74" stroke-width="2.6"/>
+        <line x1="64" y1="74" x2="64" y2="99" stroke-width="2.6"/>
+      </g>
+    </g>
+
+    <!-- CENTRAL NEXUS: PLANNING DECISION SUPPORT CENTROID (HUB) -->
+    <g id="decision-nexus" filter="url(#glowFilter)">
+      <!-- Pulsing Outer Beacon -->
+      <circle cx="64" cy="74" r="5.5" fill="#0284c7" fill-opacity="0.3" stroke="#38bdf8" stroke-width="1.2"/>
+      <!-- Inner Core Node -->
+      <circle cx="64" cy="74" r="3.2" fill="#ffffff" stroke="#0284c7" stroke-width="1.4"/>
+      <!-- Center Glowing Seed -->
+      <circle cx="64" cy="74" r="1.4" fill="#38bdf8"/>
+    </g>
+
+    <!-- SATELLITE CENTROID NODES (ZONING ANCHORS M1, M2, M3, M4) -->
+    <!-- North Anchor -->
+    <circle cx="64" cy="38" r="2.2" fill="#ffffff" stroke="#e11d48" stroke-width="1.0" filter="url(#glowFilter)"/>
+    <!-- East Anchor -->
+    <circle cx="86" cy="62" r="2.2" fill="#ffffff" stroke="#d97706" stroke-width="1.0"/>
+    <!-- West Anchor -->
+    <circle cx="42" cy="62" r="2.2" fill="#ffffff" stroke="#059669" stroke-width="1.0"/>
+    <!-- South Anchor -->
+    <circle cx="64" cy="88" r="2.2" fill="#ffffff" stroke="#0284c7" stroke-width="1.0"/>
+  </g>
+
+  <!-- Top-Right Pro Badge: "AI/ZONING" Indicator -->
+  <g transform="translate(86, 12)">
+    <rect width="30" height="14" rx="4" ry="4" fill="#0284c7" opacity="0.9"/>
+    <text x="15" y="10.5" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="7.5" font-weight="800" text-anchor="middle" letter-spacing="0.8">QGIS</text>
+  </g>
+</svg>
