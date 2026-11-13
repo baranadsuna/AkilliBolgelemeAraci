@@ -976,11 +976,75 @@
       </div>
     </section>
 
+    <!-- ============================================================ -->
+    <!-- BÖLÜM 10: SONUÇLARI NASIL OKUMALI? (E/S/AC, SPACEMATRIX, H/W) -->
+    <!-- ============================================================ -->
+    <section id="okuma-rehberi">
+      <h2>10. Sonuçları Nasıl Okumalı? (Maruz Kalma, Hassasiyet, Uyum Kapasitesi &amp; PlanX Morfoloji Metrikleri)</h2>
+      <p>
+        Üretilen öznitelik tablosunda ve Excel raporunda yer alan kırılganlık sütunları yalnızca sınıf adı vermekle kalmaz;
+        her bölge için <b>Maruz Kalma_Aciklamasi</b>, <b>Hassasiyet_Aciklamasi</b>, <b>Uyum_Kapasitesi_Aciklamasi</b>,
+        <b>Deprem_Kirilganlik_Gerekcesi</b> ve <b>Sel_Kirilganlik_Gerekcesi</b> sütunlarında ölçüm değerleriyle açıklanır:
+      </p>
+      <div class="math-block">
+        $$V = \min\!\Bigg(5.0,\;\max\!\Big(1.0,\; 0.90 + 2.10 \cdot \left(\frac{E \cdot S}{3.0 \cdot \max(1.0,\; AC)}\right)^{0.55}\Big)\Bigg)$$
+      </div>
+      <ul>
+        <li>
+          <b>Maruz Kalma (Exposure — $E$) ve Diri Fay Doğrudan Kesimi:</b> Afet tehlikesinin menzilindeki yerleşik nüfus yoğunluğu, taban alanı kaplaması ($\text{TAKS}$), bina stoğu ve
+          tehlike kaynağına (diri fay hattı, akarsu/dere yatağı, taşkın sınırı) yakınlığı ölçer. Bölgeden <b>diri fay hattının doğrudan geçmesi ($d_{\min} \le 50\,\text{m}$)</b> durumunda yakın-fay tehlike bileşeni $5.0/5$ tavanına yükselir;
+          yapısız ve nüfussuz tarım/açık alan adalarında ($n=0$, $\text{nüfus}=0$) insan/yapı maruziyeti minimumda tutulur; böylece boş tarlalar sahte biçimde "Çok Yüksek Deprem Kırılganlığı" etiketi almaz.
+        </li>
+        <li>
+          <b>Hassasiyet (Sensitivity — $S$):</b> Olası bir depremde veya taşkında yapı dokusunun fiziksel hasar görebilirlik düzeyidir:
+          kötü durumdaki yapı oranı (%), alan ağırlıklı kat sayısı / Emsal ($\text{FSI}$), bitişik nizam çekiçleme riski (%), zemin kaplama sıkışıklığı ($\text{TAKS}$) ve topografik eğimden (%) hesaplanır.
+        </li>
+        <li>
+          <b>Uyum Kapasitesi (Adaptive Capacity — $AC$):</b> Afet anında tahliye, arama-kurtarma erişimi ve toparlanma gücünü gösterir
+          (<b>$AC$ arttıkça genel kırılganlık $V$ azalır</b>): ortalama yol genişliği ($W$), sismik sokak enkaz kapanma riski ($H/W$),
+          çıkmaz sokak oranı (%), toplanma alanı / sağlık tesisi / donatı erişim mesafesi ve geçirimli açık alan ($\text{OSR}$) bileşenlerinden oluşur.
+        </li>
+      </ul>
+
+      <h3>Spacematrix Yoğunluk Tipolojisi, Sismik Sokak Kanyonu ($H/W$) ve MPYY Donatı Dengesi</h3>
+      <ul>
+        <li>
+          <b>Spacematrix ($\text{GSI} / \text{TAKS}$, $\text{FSI}$, $\text{OSR}$):</b>
+          Berghauser Pont &amp; Haupt (2010) yaklaşımıyla brüt yapı yoğunluğu $\text{FSI} = \text{TAKS} \times \text{Kat}$ ve
+          Açık Alan Oranı $\text{OSR} = (1 - \text{TAKS}) / \text{FSI}$ hesaplanarak <i>Alçak Seyrek Doku</i>, <i>Orta Katlı Blok / Karma</i>, <i>Orta Katlı Bitişik Yoğun</i> vb. kentsel doku sınıfları belirlenir.
+        </li>
+        <li>
+          <b>Sokak Enkaz Kapanma Riski ($H/W$):</b> Ortalama kat yüksekliği $3.0\,\text{m}$ kabul edilerek
+          $H/W = \frac{3.0 \times \text{Kat}}{\text{Ortalama Yol Genişliği}}$ oranı hesaplanır.
+          $H/W \ge 1.5$ olan dar sokaklı yüksek dokular <i>Kritik Enkaz Darboğazı</i> olarak işaretlenir ve uyum kapasitesini ($AC$) düşürür.
+        </li>
+        <li>
+          <b>Çıkmaz Sokak Oranı (%) &amp; Kişi Başı Aktif Donatı ($\text{m}^2/\text{kişi}$):</b> Yol çizgesinin düğüm topolojisinden gerçek çıkmaz sokak uç oranı çıkarılır; yerleşik nüfusa düşen aktif donatı + yeşil alan ($\text{m}^2/\text{kişi}$) Mekânsal Planlar Yapım Yönetmeliği (MPYY) normlarıyla karşılaştırılabilir biçimde raporlanır.
+        </li>
+      </ul>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- BÖLÜM 11: HAZIR BÖLGE ANALİZİ (SEKME 6) -->
+    <!-- ============================================================ -->
+    <section id="hazir-bolgeler">
+      <h2>11. Bağımsız Hazır Bölge Analizi Modülü (Sekme 6 — Sınırlar Korunarak Değerlendirme)</h2>
+      <p>
+        Halihazırda elinde kendi çizdiği veya onaylı plan/mahalle sınırlarından oluşan hazır alt bölgeleri bulunan plancılar,
+        <b>6. Hazır Bölge Analizi (Provided Zone Analyzer)</b> sekmesini kullanarak Ward kümelemesini çalıştırmadan bu sınırları analiz edebilir:
+      </p>
+      <ul>
+        <li><b>Mevcut Durum Veri Entegrasyonu:</b> Sekme 1 ve 2'deki imar adaları, tekil binalar, yol ağı, nüfus, fay/dere/risk katmanları ve DEM verileri doğrudan seçilen hazır poligon katmanına işlenir.</li>
+        <li><b>Sıfır Geometri Müdahalesi:</b> Kullanıcı poligonlarının geometrisi ve bölge kodları kesinlikle değiştirilmez, bölünmez ve kırpılmaz.</li>
+        <li><b>Tam Sentez Çıktısı:</b> Haritaya <code>Hazir_Bolgeler_Analizi_N</code> ve <code>Hazir_Bolgeler_Hizli_Ozet_N</code> katmanları (Ward sonuçlarını silmeden yan yana kıyaslama imkânıyla) eklenir; tüm Excel/CSV tabloları üretilir.</li>
+      </ul>
+    </section>
+
   </div>
 
   <footer>
     <div>Dokuz Eylül Üniversitesi, Mimarlık Fakültesi, Şehir ve Bölge Planlama Bölümü</div>
-    <div>Sayısal Planlama & Mekânsal Karar Destek Aracı · v1.8.0</div>
+    <div>Sayısal Planlama &amp; Mekânsal Karar Destek Aracı · v1.9.1</div>
   </footer>
 </div>
 

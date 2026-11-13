@@ -264,7 +264,8 @@ def connect_components(adj, pts):
         adj[best[2]].add(best[1])
 
 
-def ward_merge(vecs, node_w, areas, adj, target_k, area_cap=None, cap_pow=2.0, eps=0.05, affinity_fn=None):
+def ward_merge(vecs, node_w, areas, adj, target_k, area_cap=None, cap_pow=2.0, eps=0.05,
+               affinity_fn=None, cluster_affinity_fn=None, on_merge_fn=None):
     n = len(vecs)
     dim = len(vecs[0]) if n else 0
     W = list(node_w)
@@ -288,7 +289,14 @@ def ward_merge(vecs, node_w, areas, adj, target_k, area_cap=None, cap_pow=2.0, e
         elif A[a] < 20000.0 or A[b] < 20000.0:
             c *= 0.60
         cap_factor = 1.0
-        if affinity_fn is not None:
+        if cluster_affinity_fn is not None:
+            aff = cluster_affinity_fn(a, b, len(members[a]), len(members[b]), A[a], A[b])
+            if isinstance(aff, (tuple, list)):
+                c *= aff[0]
+                cap_factor = aff[1] if len(aff) > 1 else 1.0
+            else:
+                c *= aff
+        elif affinity_fn is not None:
             aff = affinity_fn(members[a], members[b])
             if isinstance(aff, (tuple, list)):
                 c *= aff[0]
@@ -309,6 +317,8 @@ def ward_merge(vecs, node_w, areas, adj, target_k, area_cap=None, cap_pow=2.0, e
         c, a, b, va, vb = heapq.heappop(heap)
         if a not in alive or b not in alive or ver[a] != va or ver[b] != vb:
             continue
+        if on_merge_fn is not None:
+            on_merge_fn(a, b)
         wa, wb = W[a], W[b]
         V[a] = [(wa * x + wb * y) / (wa + wb) for x, y in zip(V[a], V[b])]
         W[a] = wa + wb

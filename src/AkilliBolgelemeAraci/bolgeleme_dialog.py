@@ -438,6 +438,18 @@ UI_TRANSLATIONS = {
         "tab_3": "3. Weights & Settings",
         "tab_4": "4. Boundary Rationales Report",
         "tab_5": "5. Methodology & MPYY Guide",
+        "tab_6": "6. Provided Zone Analyzer",
+        "grp_cz": "K. Analyze User-Provided Pre-Drawn Zones (Zero Boundary Modification)",
+        "lbl_cz_info": (
+            "⚡ <b>Independent Existing-Zone Analyzer:</b> Keep your existing situation data (blocks/land use, buildings, roads, population, hazards &amp; DEM) in Tabs 1–2, "
+            "and select your <b>own polygon zones layer</b> below. Every zone polygon keeps its <b>exact boundary &amp; code</b> while calculating all metrics, "
+            "Spacematrix (FSI/OSR), street canyon H/W, dead-end %, E×S/AC vulnerability, and ΔZ neighbor comparisons identically to Automated Zoning."
+        ),
+        "lbl_cz_lyr": "<b>Provided Zone Polygon Layer:</b>",
+        "lbl_cz_fld": "<b>Zone Code / Name Field (Optional):</b>",
+        "chk_cz_quick": "Also add simplified 'Hazir_Bolgeler_Hizli_Ozet' quick-read layer to QGIS map",
+        "btn_cz_run": "▶ ANALYZE PROVIDED ZONES (KEEP EXACT POLYGONS)",
+        "grp_cz_out": "Provided Zones — Analysis Summary & Vulnerability Breakdown",
         "btn_quick_csv": "⚡ Quick Summary (Excel / CSV)",
         "btn_csv": "📊 Full Table (Excel / CSV)",
         "btn_matrix": "📋 Tracking Matrix (Excel / CSV)",
@@ -509,6 +521,13 @@ UI_TRANSLATIONS = {
         "grp_i": "I. Sub-Zoning Summary, Internal Cohesion & Neighbor Separation Rationales",
         "lbl_about_top": "<b>Spatial Analysis Methodology, MAUP Solution & Comprehensive User Guide:</b>",
         "btn_browser": "🌐 Open Full Methodology Guide in Browser (HTML)",
+        "grp_read_guide": "How to Read the Results? (E / S / AC, Earthquake-Flood Drivers, Spacematrix & H/W)",
+        "lbl_read_guide": (
+            "<b>• Exposure (E — Maruz Kalma):</b> Measures population, building assets (TAKS/n) and proximity to active faults or streams/floodplains. Unpopulated vacant/farm blocks keep E low.<br>"
+            "<b>• Sensitivity (S — Hassasiyet):</b> Physical structural fragility driven by poor buildings (%), floor height/FSI, attached walls (%), and terrain slope (%).<br>"
+            "<b>• Adaptive Capacity (AC — Uyum Kapasitesi):</b> Evacuation street width, Street Canyon Debris Blockage (<b>H/W = 3m×Floors/Width</b>; ≥1.5 blocks vehicles), dead-end street %, gathering/facility access, and Open Space Ratio (OSR). <b>Higher AC lowers vulnerability [V = f(E×S/AC)].</b><br>"
+            "<b>• Spacematrix &amp; MPYY Balance:</b> FSI (density), GSI (TAKS), OSR (openness), per-capita active facility m²/person, and Shannon land-use entropy (0-1)."
+        ),
         "grp_j": "J. Comprehensive Methodology, MAUP Solution & Step-by-Step User Manual",
         "fld_kullanim": "Land / Building Use",
         "fld_kat": "Floor Count / Height",
@@ -536,6 +555,18 @@ UI_TRANSLATIONS = {
         "tab_3": "3. Ağırlıklar ve Ayarlar",
         "tab_4": "4. Sınır Ayrım Gerekçeleri Raporu",
         "tab_5": "5. Metodoloji ve MPYY Kılavuzu",
+        "tab_6": "6. Hazır Bölge Analizi",
+        "grp_cz": "K. Kullanıcının Kendi Çizdiği / Hazır Bölgelerini Analiz Et (Sınırlar Korunur)",
+        "lbl_cz_info": (
+            "⚡ <b>Bağımsız Hazır Bölge Analiz Modülü:</b> Sekme 1 ve 2'deki mevcut durum katmanlarınız (imar adaları/arazi kullanımı, yapılar, yol ağı, nüfus, fay/dere/risk ve DEM) "
+            "aynı kalırken, aşağıdan <b>kendi çizdiğiniz hazır bölge poligon katmanını</b> seçin. Eklenti bölge sınırlarını ve kodlarını <b>kesinlikle bölmeden/değiştirmeden</b> "
+            "her bölge için tüm mekânsal istatistikleri, Spacematrix (FSI/OSR), H/W enkaz oranını, E×S/AC deprem/sel kırılganlığını, planlama kimliğini ve ΔZ komşuluk farklarını hesaplar."
+        ),
+        "lbl_cz_lyr": "<b>Hazır Bölge Poligon Katmanı:</b>",
+        "lbl_cz_fld": "<b>Bölge Kodu / Adı Sütunu (İsteğe Bağlı):</b>",
+        "chk_cz_quick": "Haritaya ayrıca sadeleştirilmiş 'Hazir_Bolgeler_Hizli_Ozet' hızlı okuma katmanı ekle",
+        "btn_cz_run": "▶ HAZIR BÖLGELERİ ANALİZ ET (SINIRLARI KORUYARAK)",
+        "grp_cz_out": "Hazır Bölgeler — Ölçüm Özeti ve Kırılganlık (E×S/AC) Sonuçları",
         "btn_quick_csv": "⚡ Hızlı Özet (Excel / CSV)",
         "btn_csv": "📊 Detaylı Tablo (Excel / CSV)",
         "btn_matrix": "📋 İzleme Matrisi (Excel / CSV)",
@@ -607,6 +638,13 @@ UI_TRANSLATIONS = {
         "grp_i": "I. Alt Bölgeleme Özeti, İç Bütünlük ve Komşu Bölgelerden Ayrım Gerekçeleri",
         "lbl_about_top": "<b>Mekânsal Analiz Metodolojisi, MAUP Çözümü ve Kapsamlı Kullanım El Kitabı:</b>",
         "btn_browser": "🌐 Bu El Kitabını Tam Sayfa Tarayıcıda Aç (HTML)",
+        "grp_read_guide": "Sonuçları Nasıl Okumalı? (Maruz Kalma [E], Hassasiyet [S], Uyum Kapasitesi [AC], Spacematrix & H/W)",
+        "lbl_read_guide": (
+            "<b>• Maruz Kalma (E):</b> Afete maruz kalan nüfus/bina varlığı ile diri fay veya dere/taşkın kaynağına yakınlığı ölçer. Yapısız/nüfussuz tarım veya boş adalarda insan maruziyeti düşüktür.<br>"
+            "<b>• Hassasiyet (S):</b> Kötü durumdaki yapı oranı, kat sayısı/FSI, bitişik nizam çekiçleme riski ve zemin eğimine bağlı fiziksel yıkım duyarlılığını gösterir.<br>"
+            "<b>• Uyum Kapasitesi (AC):</b> Yol genişliği, sokak kanyon enkaz oranı (<b>H/W = 3m×Kat/Yol</b>; ≥1.5 enkaz kapanma darboğazı), çıkmaz sokak %, toplanma/donatı erişimi ve açık alan (OSR / 1-TAKS) gücüdür. <b>AC arttıkça kırılganlık (V) düşer.</b><br>"
+            "<b>• Spacematrix &amp; MPYY Dengesi:</b> FSI (Emsal), TAKS (GSI), OSR doku tipolojisi yanında <b>Kişi Başı Aktif Donatı (m²/kişi)</b> ve <b>Karma Kullanım Entropisi (0-1)</b> her alt bölgenin somut tablosunda verilir."
+        ),
         "grp_j": "J. Kapsamlı Metodoloji, MAUP Çözümü ve Adım Adım Kullanım Kılavuzu",
         "fld_kullanim": "Arazi / Yapı Kullanımı",
         "fld_kat": "Kat Adedi / Yüksekliği",
@@ -634,6 +672,8 @@ UI_TRANSLATIONS = {
         "tab_3": "3. 权重与参数设置",
         "tab_4": "4. 边界划分依据与报告",
         "tab_5": "5. 方法论与 MPYY 指南",
+        "tab_6": "6. 既有分区评估分析",
+        "btn_cz_run": "▶ 分析既有分区 (保持原边界不变)",
         "btn_quick_csv": "⚡ 快速摘要表 (Excel / CSV)",
         "btn_csv": "📊 完整分区表 (Excel / CSV)",
         "btn_matrix": "📋 分析追踪矩阵 (Excel / CSV)",
@@ -663,6 +703,8 @@ UI_TRANSLATIONS = {
         "tab_3": "3. Pesos y Ajustes",
         "tab_4": "4. Justificación de Límites y Reporte",
         "tab_5": "5. Metodología y Guía MPYY",
+        "tab_6": "6. Analizador de Zonas Existentes",
+        "btn_cz_run": "▶ ANALIZAR ZONAS PROPIAS (SIN MODIFICAR LÍMITES)",
         "btn_quick_csv": "⚡ Resumen Rápido (Excel / CSV)",
         "btn_csv": "📊 Tabla Completa (Excel / CSV)",
         "btn_matrix": "📋 Matriz de Seguimiento (Excel / CSV)",
@@ -1205,6 +1247,7 @@ class BolgelemeDialog(QDialog):
         self.tabs.addTab(wrap_in_scroll(self.page_settings()), "3. Ağırlıklar ve Ayarlar")
         self.tabs.addTab(self.page_results(), "4. Sınır Ayrım Gerekçeleri Raporu")
         self.tabs.addTab(self.page_about(), "5. Metodoloji ve MPYY Kılavuzu")
+        self.tabs.addTab(wrap_in_scroll(self.page_custom_zones()), "6. Provided Zone Analyzer")
         root.addWidget(self.tabs, 1)
 
         # Sabit Alt Çalıştırma Çubuğu
@@ -1287,8 +1330,9 @@ class BolgelemeDialog(QDialog):
         if hasattr(self, "btn_help"):
             self.btn_help.setText(g("btn_help"))
         if hasattr(self, "tabs"):
-            for idx, key in enumerate(("tab_1", "tab_2", "tab_3", "tab_4", "tab_5")):
-                self.tabs.setTabText(idx, g(key))
+            for idx, key in enumerate(("tab_1", "tab_2", "tab_3", "tab_4", "tab_5", "tab_6")):
+                if idx < self.tabs.count():
+                    self.tabs.setTabText(idx, g(key))
         if hasattr(self, "btn_quick_csv"):
             self.btn_quick_csv.setText(g("btn_quick_csv"))
         if hasattr(self, "btn_csv"):
@@ -1323,7 +1367,11 @@ class BolgelemeDialog(QDialog):
             ("grp_g", "grp_g"),
             ("grp_h", "grp_h"), ("chk_filter_medians", "chk_medians"), ("chk_excel", "chk_excel"),
             ("chk_cells", "chk_cells"), ("grp_i", "grp_i"), ("lbl_about_top", "lbl_about_top"),
-            ("btn_browser", "btn_browser"), ("grp_j", "grp_j"),
+            ("btn_browser", "btn_browser"), ("grp_read_guide", "grp_read_guide"), ("lbl_read_guide", "lbl_read_guide"),
+            ("grp_j", "grp_j"),
+            ("grp_cz", "grp_cz"), ("lbl_cz_info", "lbl_cz_info"), ("lbl_cz_lyr", "lbl_cz_lyr"),
+            ("lbl_cz_fld", "lbl_cz_fld"), ("chk_cz_quick", "chk_cz_quick"),
+            ("btn_cz_run", "btn_cz_run"), ("grp_cz_out", "grp_cz_out"),
         ):
             w_obj = getattr(self, attr_name, None)
             if w_obj is not None and g(key):
@@ -2409,6 +2457,20 @@ class BolgelemeDialog(QDialog):
         top_box.addWidget(self.btn_browser)
         lay.addLayout(top_box)
 
+        self.grp_read_guide = QGroupBox("How to Read Results? (Exposure E, Sensitivity S, Adaptive Capacity AC, Spacematrix & H/W)")
+        rg_lay = QVBoxLayout(self.grp_read_guide)
+        rg_lay.setContentsMargins(10, 6, 10, 6)
+        self.lbl_read_guide = QLabel(
+            "<b>• Maruz Kalma (Exposure, E):</b> Tehlikeye açık nüfus, bina sayısı/TAKS ve diri fay / akarsu-taşkın kaynağına yakınlığı ölçer. Yapısız/nüfussuz tarım alanlarında E otomatik düşük kalır.<br>"
+            "<b>• Hassasiyet (Sensitivity, S):</b> Kötü yapı oranı, kat sayısı/FSI, bitişik nizam çekiçleme riski ve zemin eğimine göre yapı stoğunun hasar kırılganlığını gösterir.<br>"
+            "<b>• Uyum Kapasitesi (Adaptive Capacity, AC):</b> Yol genişliği, sokak kanyon enkaz açıklığı (<b>H/W = 3m×Kat/Yol</b>; ≥1.5 tıkanma riski), çıkmaz sokak oranı (%), acil toplanma/sağlık-donatı erişimi ve açık alan (OSR) gücüdür. <b>Yüksek AC kırılganlığı düşürür!</b><br>"
+            "<b>• Spacematrix &amp; MPYY:</b> FSI (Emsal), GSI (TAKS) ve OSR [(1-TAKS)/FSI] dokuyu sınıflar; <b>Kişi Başı Aktif Donatı (m²/kişi)</b> ve <b>Karma Entropi (0-1)</b> sosyal donatı dengesini ölçer."
+        )
+        self.lbl_read_guide.setWordWrap(True)
+        self.lbl_read_guide.setStyleSheet("font-size: 11px; color: #0f172a; background: #f8fafc; padding: 6px; border-radius: 5px; border: 1px solid #cbd5e1;")
+        rg_lay.addWidget(self.lbl_read_guide)
+        lay.addWidget(self.grp_read_guide)
+
         self.grp_j = QGroupBox("J. Comprehensive Methodology, MAUP Solution & Step-by-Step User Manual")
         v = QVBoxLayout(self.grp_j)
         v.setContentsMargins(8, 8, 8, 8)
@@ -2432,6 +2494,83 @@ class BolgelemeDialog(QDialog):
             webbrowser.open(f"file:///{os.path.abspath(guide_path).replace(os.sep, '/')}")
         else:
             QMessageBox.information(self, "Guide / Kılavuz", "KULLANIM_KILAVUZU.html not found.")
+
+    def _auto_match_custom_code_field(self, lyr):
+        self.fld_custom_code.setLayer(lyr)
+        if lyr is None or not hasattr(lyr, "fields"):
+            return
+        names = [f.name() for f in lyr.fields()]
+        if not names:
+            return
+        norm_map = {analiz.alg.norm_tr(n): n for n in names}
+        for pat in ("bolge_kod", "bolgekod", "kod", "code", "zone", "bolge_ad", "bolge", "isim", "name", "label", "ad", "no"):
+            for nk, orig in norm_map.items():
+                if pat in nk:
+                    self.fld_custom_code.setField(orig)
+                    return
+
+    def page_custom_zones(self):
+        w = QWidget()
+        lay = QVBoxLayout(w)
+        lay.setContentsMargins(10, 8, 10, 10)
+        lay.setSpacing(10)
+
+        self.grp_cz = QGroupBox("K. Analyze User-Provided Pre-Drawn Zones (Zero Boundary Modification)")
+        v = QVBoxLayout(self.grp_cz)
+        v.setContentsMargins(12, 12, 12, 12)
+        v.setSpacing(10)
+
+        self.lbl_cz_info = QLabel(
+            "⚡ <b>Independent Existing-Zone Analyzer:</b> Keep your existing situation data (blocks/land use, buildings, roads, population, hazards &amp; DEM) in Tabs 1–2, "
+            "and select your <b>own polygon zones layer</b> below. Every zone polygon keeps its <b>exact boundary &amp; code</b> while calculating all metrics, "
+            "Spacematrix (FSI/OSR), street canyon H/W, dead-end %, E×S/AC vulnerability, and ΔZ neighbor comparisons identically to Automated Zoning."
+        )
+        self.lbl_cz_info.setWordWrap(True)
+        self.lbl_cz_info.setStyleSheet(
+            "background-color: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 10px; color: #0c4a6e;"
+        )
+        v.addWidget(self.lbl_cz_info)
+
+        form = QFormLayout()
+        form.setSpacing(8)
+        self.cmb_custom_zones = QgsMapLayerComboBox()
+        self.cmb_custom_zones.setAllowEmptyLayer(True)
+        self.cmb_custom_zones.setFilters(QgsMapLayerProxyModel.Filter.PolygonLayer)
+        self.cmb_custom_zones.layerChanged.connect(self._auto_match_custom_code_field)
+
+        self.fld_custom_code = QgsFieldComboBox()
+        self.fld_custom_code.setAllowEmptyFieldName(True)
+
+        self.lbl_cz_lyr = QLabel("<b>Provided Zone Polygon Layer:</b>")
+        self.lbl_cz_fld = QLabel("<b>Zone Code / Name Field (Optional):</b>")
+        form.addRow(self.lbl_cz_lyr, self.cmb_custom_zones)
+        form.addRow(self.lbl_cz_fld, self.fld_custom_code)
+        v.addLayout(form)
+
+        self.chk_cz_quick = QCheckBox(
+            "Also add simplified 'Hazir_Bolgeler_Hizli_Ozet' quick-read layer to QGIS map"
+        )
+        self.chk_cz_quick.setChecked(True)
+        v.addWidget(self.chk_cz_quick)
+
+        self.btn_cz_run = QPushButton("▶ ANALYZE PROVIDED ZONES (KEEP EXACT POLYGONS)")
+        self.btn_cz_run.setObjectName("runBtn")
+        if PointingHandCursor is not None:
+            self.btn_cz_run.setCursor(PointingHandCursor)
+        self.btn_cz_run.setMinimumHeight(42)
+        self.btn_cz_run.clicked.connect(self.run_custom_zones)
+        v.addWidget(self.btn_cz_run)
+        lay.addWidget(self.grp_cz)
+
+        self.grp_cz_out = QGroupBox("Provided Zones — Analysis Summary & Vulnerability Breakdown")
+        vo = QVBoxLayout(self.grp_cz_out)
+        vo.setContentsMargins(10, 10, 10, 10)
+        self.txt_cz = QTextEdit()
+        self.txt_cz.setReadOnly(True)
+        self.txt_cz.setMinimumHeight(240)
+        vo.addWidget(self.txt_cz)
+        lay.addWidget(self.grp_cz_out, 1)
+        return w
 
     # ------------------------------------------------------------ çalıştırma ve görünüm yenileme
     def log(self, m):
@@ -2469,7 +2608,28 @@ class BolgelemeDialog(QDialog):
             kisa_ozet = z.get("kisa_ozet") or analiz.describe_quick_summary(z)
             kisa_ayrim = z.get("kisa_ayrim_nedeni") or ""
             excel_ger = z.get("excel_gerekce") or ""
-            searchable = f"{z['kod']} {z['karakter']} {kisa_ozet} {kisa_ayrim} {z['olculen']} {z['gerekce']}".lower()
+            vuln = z.get("vuln") or analiz.compute_vulnerability(z)
+
+            morph_parts = []
+            if z.get("spacematrix_tip"):
+                osr_s = f" | OSR={z['osr']:.2f}" if z.get("osr") is not None else ""
+                morph_parts.append(f"Spacematrix: FSI={z.get('fsi', 0.0):.2f} | TAKS=%{z['taks']*100:.1f}{osr_s} ({z['spacematrix_tip']})")
+            if z.get("hw_ratio") is not None:
+                morph_parts.append(f"Sokak Enkaz Riski H/W={z['hw_ratio']:.2f} [{z.get('hw_sinif', '')}]")
+            if z.get("cikmaz_sokak_orani") is not None:
+                morph_parts.append(f"Çıkmaz Sokak=%{z['cikmaz_sokak_orani']*100:.1f}")
+            if z.get("kisi_basi_donati_m2") is not None:
+                morph_parts.append(f"Kişi Başı Donatı={z['kisi_basi_donati_m2']:.1f} m²/kişi")
+            if z.get("karma_entropi") is not None:
+                morph_parts.append(f"Karma Entropi={z['karma_entropi']:.2f}")
+            morph_line = " | ".join(morph_parts)
+
+            searchable = (
+                f"{z['kod']} {z['karakter']} {kisa_ozet} {kisa_ayrim} {morph_line} "
+                f"{vuln['deprem_gerekce']} {vuln['sel_gerekce']} "
+                f"{vuln['E_aciklama']} {vuln['S_aciklama']} {vuln['AC_aciklama']} "
+                f"{z['olculen']} {z['gerekce']}"
+            ).lower()
             if q_filter and q_filter not in searchable:
                 continue
             shown += 1
@@ -2481,6 +2641,17 @@ class BolgelemeDialog(QDialog):
                 if z.get("mudahale_karari"):
                     block_str += f"\n   Planning Decision / Planlama Kararı: {z['mudahale_karari']}"
                 block_str += f"\n   Key Metrics / Temel Göstergeler    : {kisa_ozet}"
+                if morph_line:
+                    block_str += f"\n   Form & Evacuation / Doku-Tahliye   : {morph_line}"
+                block_str += (
+                    f"\n   Vulnerability / Afet Kırılganlığı  : Genel: {vuln['genel_kirilganlik']} | "
+                    f"Deprem: {vuln['deprem_kirilganlik']} | Sel: {vuln['sel_kirilganlik']}"
+                    f"\n     • {vuln['deprem_gerekce']}"
+                    f"\n     • {vuln['sel_gerekce']}"
+                    f"\n     • {vuln['E_aciklama']}"
+                    f"\n     • {vuln['S_aciklama']}"
+                    f"\n     • {vuln['AC_aciklama']}"
+                )
                 if kisa_ayrim:
                     block_str += f"\n   Why Separated / Ayrım Gerekçesi    : {kisa_ayrim}"
                 lines.append(block_str + "\n" + "-" * 84)
@@ -2495,6 +2666,17 @@ class BolgelemeDialog(QDialog):
                 if z.get("plan_karsiligi"):
                     block_str += f"\n   Plan Equivalent / Plan Karşılığı   : {z['plan_karsiligi']}"
                 block_str += f"\n   Key Metrics / Temel Göstergeler    : {kisa_ozet}"
+                if morph_line:
+                    block_str += f"\n   Form & Evacuation / Doku-Tahliye   : {morph_line}"
+                block_str += (
+                    f"\n   Vulnerability Breakdown (E×S/AC)   : Genel={vuln['genel_kirilganlik']} | "
+                    f"E={vuln['E_tier']}, S={vuln['S_tier']}, AC={vuln['AC_tier']}"
+                    f"\n     • {vuln['deprem_gerekce']}"
+                    f"\n     • {vuln['sel_gerekce']}"
+                    f"\n     • {vuln['E_aciklama']}"
+                    f"\n     • {vuln['S_aciklama']}"
+                    f"\n     • {vuln['AC_aciklama']}"
+                )
                 if kisa_ayrim:
                     block_str += f"\n   Why Separated / Ayrım Gerekçesi    : {kisa_ayrim}"
                 block_str += f"\n   Technical Detail / Teknik Ayrıntı  : {z['gerekce']}"
@@ -2502,25 +2684,23 @@ class BolgelemeDialog(QDialog):
             else:
                 lines.append(
                     f"■ {z['kod']} — {z['karakter']} ({ha:.1f} ha | {z['olculen']})\n"
-                    f"   • Detailed Rationale: {z['gerekce']}\n" + "-" * 84
+                    + (f"   • Form & Street Canyon: {morph_line}\n" if morph_line else "")
+                    + f"   • {vuln['deprem_gerekce']}\n"
+                    + f"   • {vuln['sel_gerekce']}\n"
+                    + f"   • {vuln['E_aciklama']}\n"
+                    + f"   • {vuln['S_aciklama']}\n"
+                    + f"   • {vuln['AC_aciklama']}\n"
+                    + f"   • Detailed Rationale: {z['gerekce']}\n" + "-" * 84
                 )
 
         lines.append(f"✔ Analiz tamamlandı / Analysis completed ({len(self.last_zones)} sub-zones added to map / alt bölge haritaya eklendi, {shown} shown).")
         self.txt.setPlainText("\n".join(lines))
 
-    def run(self, interactive=True):
+    def _collect_pipeline_params(self, fallback_layer=None):
         bnd = self.cmb_boundary.currentLayer()
         road = self.cmb_road.currentLayer()
         blk = self.cmb_block.currentLayer()
         bldg = self.cmb_bldg.currentLayer() if self.chk_use_bldg.isChecked() else None
-
-        if not bnd and not blk and not bldg and not road:
-            msg = "Lütfen en azından Plan Sınırı, Yol Ağı, İmar Adası veya Yapı katmanlarından birini seçiniz."
-            if interactive:
-                QMessageBox.warning(self, "Eksik Katman", msg)
-            else:
-                self.log("✖ UYARI: " + msg)
-            return False
 
         extras = []
         for r in range(self.tbl.rowCount()):
@@ -2542,10 +2722,10 @@ class BolgelemeDialog(QDialog):
             "per_bldg": self.spn_per_bldg.value()
         }
 
-        base_lyr = bnd or blk or bldg or road
-        P = {
+        base_lyr = bnd or blk or bldg or road or fallback_layer
+        return {
             "mode": self.cmb_mode.currentData() if hasattr(self, "cmb_mode") else "advanced",
-            "work_crs": base_lyr.crs(),
+            "work_crs": base_lyr.crs() if base_lyr else None,
             "boundary_layer": bnd,
             "road_layer": road,
             "block_layer": blk,
@@ -2574,6 +2754,57 @@ class BolgelemeDialog(QDialog):
             "filter_medians": self.chk_filter_medians.isChecked(),
             "use_excel": self.chk_excel.isChecked(),
         }
+
+    def _finalize_layer_outputs(self, res, is_custom=False):
+        lyr, self.records = analiz.make_zone_layer(res, quick_only=False)
+        lyr_quick, self.quick_records = analiz.make_zone_layer(res, quick_only=True)
+        proj = QgsProject.instance()
+        if is_custom:
+            old_ids = [
+                lid for lid, l in proj.mapLayers().items()
+                if l.name().startswith("Hazir_Bolgeler")
+            ]
+        else:
+            old_ids = [
+                lid for lid, l in proj.mapLayers().items()
+                if l.name().startswith("Alt_Bolgeler") or l.name().startswith("Alt_Bölgeler")
+            ]
+        if old_ids:
+            proj.removeMapLayers(old_ids)
+
+        if (not is_custom) and self.chk_cells.isChecked():
+            proj.addMapLayer(analiz.make_cell_layer(res))
+        add_quick = (
+            (self.chk_cz_quick.isChecked() if hasattr(self, "chk_cz_quick") else True)
+            if is_custom
+            else (hasattr(self, "chk_quick_layer") and self.chk_quick_layer.isChecked())
+        )
+        if add_quick:
+            proj.addMapLayer(lyr_quick)
+        proj.addMapLayer(lyr)
+        if self.iface and hasattr(self.iface, "mapCanvas") and self.iface.mapCanvas():
+            self.iface.mapCanvas().refresh()
+
+        active_col_names = ", ".join(self.records[0].keys()) if self.records else ""
+        self._pipeline_logs.append(f"✔ Boş (NULL) sütunlar temizlendi. Aktif dolu sütunlar:\n   [{active_col_names}]")
+
+        self.last_zones = res["zones"]
+        self.refresh_report_view()
+        self.btn_quick_csv.setEnabled(True)
+        self.btn_csv.setEnabled(True)
+        self.btn_matrix.setEnabled(True)
+        self.progress.setValue(100)
+
+    def run(self, interactive=True):
+        P = self._collect_pipeline_params()
+        if not (P["boundary_layer"] or P["block_layer"] or P["bldg_layer"] or P["road_layer"]):
+            msg = "Lütfen en azından Plan Sınırı, Yol Ağı, İmar Adası veya Yapı katmanlarından birini seçiniz."
+            if interactive:
+                QMessageBox.warning(self, "Eksik Katman", msg)
+            else:
+                self.log("✖ UYARI: " + msg)
+            return False
+
         self.last_P = P
         self._pipeline_logs = []
         self.txt.clear()
@@ -2584,34 +2815,7 @@ class BolgelemeDialog(QDialog):
             QApplication.setOverrideCursor(WaitCursor)
         try:
             res = analiz.run_pipeline(P, self.log, self.progress.setValue)
-            lyr, self.records = analiz.make_zone_layer(res, quick_only=False)
-            lyr_quick, self.quick_records = analiz.make_zone_layer(res, quick_only=True)
-            # Eski bolgeleme katmanlarini projeden temizle (tek cikti garantisi)
-            proj = QgsProject.instance()
-            old_ids = [
-                lid for lid, l in proj.mapLayers().items()
-                if l.name().startswith("Alt_Bolgeler") or l.name().startswith("Alt_Bölgeler")
-            ]
-            if old_ids:
-                proj.removeMapLayers(old_ids)
-
-            if self.chk_cells.isChecked():
-                QgsProject.instance().addMapLayer(analiz.make_cell_layer(res))
-            if hasattr(self, "chk_quick_layer") and self.chk_quick_layer.isChecked():
-                QgsProject.instance().addMapLayer(lyr_quick)
-            QgsProject.instance().addMapLayer(lyr)
-            if self.iface and hasattr(self.iface, "mapCanvas") and self.iface.mapCanvas():
-                self.iface.mapCanvas().refresh()
-
-            active_col_names = ", ".join(self.records[0].keys()) if self.records else ""
-            self._pipeline_logs.append(f"✔ Boş (NULL) sütunlar temizlendi. Aktif dolu sütunlar:\n   [{active_col_names}]")
-
-            self.last_zones = res["zones"]
-            self.refresh_report_view()
-            self.btn_quick_csv.setEnabled(True)
-            self.btn_csv.setEnabled(True)
-            self.btn_matrix.setEnabled(True)
-            self.progress.setValue(100)
+            self._finalize_layer_outputs(res, is_custom=False)
             return True
         except Exception as e:
             self.log("✖ HATA: " + str(e) + "\n" + traceback.format_exc())
@@ -2623,6 +2827,60 @@ class BolgelemeDialog(QDialog):
                 QApplication.restoreOverrideCursor()
             self.btn_run.setEnabled(True)
             self.btn_top_run.setEnabled(True)
+
+    def run_custom_zones(self, interactive=True):
+        """Sekme 6: Kullanıcının kendi sağladığı hazır bölge poligonlarını sınırları değiştirmeden analiz eder."""
+        cz_lyr = self.cmb_custom_zones.currentLayer() if hasattr(self, "cmb_custom_zones") else None
+        if cz_lyr is None:
+            msg = "Please select your pre-drawn zone polygons layer first / Lütfen önce hazır bölge poligon katmanını seçiniz."
+            if interactive:
+                QMessageBox.warning(self, "Missing Zone Layer / Eksik Katman", msg)
+            else:
+                self.txt_cz.append("✖ UYARI: " + msg)
+            return False
+
+        P = self._collect_pipeline_params(fallback_layer=cz_lyr)
+        P["work_crs"] = cz_lyr.crs() if (P.get("work_crs") is None or P["work_crs"].isGeographic()) else P["work_crs"]
+        if not (P["block_layer"] or P["bldg_layer"] or P["road_layer"] or P["extras"] or P["dem"]):
+            msg = (
+                "Please select existing situation layers (Blocks, Buildings, Roads, Hazards, or DEM) in Tabs 1–2 / "
+                "Lütfen Sekme 1–2'den mevcut durum katmanlarını (Adalar, Yapılar, Yollar, Doğal Eşikler veya DEM) seçiniz."
+            )
+            if interactive:
+                QMessageBox.warning(self, "Missing Context Layers / Mevcut Durum Eksik", msg)
+            else:
+                self.txt_cz.append("✖ UYARI: " + msg)
+            return False
+
+        code_field = (self.fld_custom_code.currentField() or "") if hasattr(self, "fld_custom_code") else ""
+        self.last_P = P
+        self._pipeline_logs = []
+        self.txt.clear()
+        self.txt_cz.clear()
+        self.btn_cz_run.setEnabled(False)
+        if WaitCursor is not None:
+            QApplication.setOverrideCursor(WaitCursor)
+
+        def cz_log(msg):
+            self.log(msg)
+            self.txt_cz.append(msg)
+
+        try:
+            res = analiz.run_custom_zones_pipeline(
+                P, cz_lyr, code_field=code_field, log=cz_log, progress=self.progress.setValue
+            )
+            self._finalize_layer_outputs(res, is_custom=True)
+            self.txt_cz.setPlainText(self.txt.toPlainText())
+            return True
+        except Exception as e:
+            cz_log("✖ HATA: " + str(e) + "\n" + traceback.format_exc())
+            if interactive:
+                QMessageBox.critical(self, "Analiz Hatası", str(e))
+            raise
+        finally:
+            if WaitCursor is not None:
+                QApplication.restoreOverrideCursor()
+            self.btn_cz_run.setEnabled(True)
 
     def export_quick_csv(self, target_path=None):
         """Hızlı okuma metriklerini ve sade ayrım gerekçesini içeren özet tabloyu düzenli Excel (.xlsx) veya CSV olarak dışa aktarır."""
