@@ -5178,228 +5178,11 @@ FRIENDLY_COL_HEADERS = {
 }
 
 
-def _tr_upper(text):
-    """Türkçe karakter kurallarına (i->İ, ı->I) uyumlu büyük harf dönüşümü."""
-    return str(text or "").replace("i", "İ").replace("ı", "I").upper()
-
-
-def build_excel_pafta_lejant_summary(rec, z=None, P=None):
-    """
-    Excel 1_Hizli_Ozet_Tablosu sayfasındaki HIZLI ÖZET sütunu için
-    %100 büyük harfli, sayısal değerleri cümle sonu parantez içinde veren,
-    doğrudan Pafta / Lejant Dili özet metnini üretir (öneri cümlesi üretmez).
-    """
-    def _f(key, default=0.0):
-        val = rec.get(key)
-        try:
-            return float(val) if val is not None and str(val).strip() != "" else default
-        except (TypeError, ValueError):
-            return default
-
-    konut = _f("Konut_Kullanim_Orani_Yuzde")
-    ticaret = _f("Ticaret_Kullanim_Orani_Yuzde")
-    sanayi = _f("Sanayi_Depolama_Orani_Yuzde")
-    tarim = _f("Tarim_Acik_Alan_Orani_Yuzde")
-    donati = _f("Donati_Alani_Orani_Yuzde")
-    sit = _f("Sit_Alani_Orani_Yuzde")
-    ndens = _f("Nufus_Yogunlugu_Kisi_Ha")
-    pop = _f("Toplam_Nufus_Kisi")
-    bina_sayisi = _f("Toplam_Bina_Sayisi")
-    kat = _f("Ortalama_Kat_Sayisi")
-    bit = _f("Bitisik_Nizam_Orani_Yuzde")
-    kotu = _f("Kotu_Durumdaki_Yapi_Orani_Yuzde")
-    egim = _f("Ortalama_Egim_Yuzde")
-    rakim = _f("Ortalama_Rakim_m")
-    fay_m = _f("Fay_Hattina_Uzaklik_m", -1.0)
-    yol_w = _f("Ortalama_Yol_Genisligi_m")
-    cikmaz = _f("Cikmaz_Sokak_Orani_Yuzde")
-    donati_m2 = _f("Kisi_Basi_Donati_m2", -1.0)
-
-    ext_min = (z.get("ext_min") or {}) if isinstance(z, dict) else {}
-    fay_min = ext_min.get("fay")
-    sub_lu = (z.get("sub_lu_pay") or {}) if isinstance(z, dict) else {}
-    mezarlik_pay = float(sub_lu.get("mezarlik", 0.0) or 0.0) * 100.0
-    nizam_raw = str(rec.get("Baskin_Yapi_Nizami") or "")
-    dep_sinif = str(rec.get("Deprem_Kirilganlik_Sinifi") or "").strip()
-    sel_sinif = str(rec.get("Sel_Kirilganlik_Sinifi") or "").strip()
-    has_durum = True if P is None else bool((P.get("fields") or {}).get("durum") or (P.get("bfields") or {}).get("durum"))
-
-    sentences = []
-
-    # 1. Fonksiyon ve Nüfus Yoğunluğu
-    if ndens >= 100.0:
-        pop_seg = ", YÜKSEK NÜFUS YOĞUNLUĞUNA SAHİP"
-    elif ndens >= 45.0:
-        pop_seg = ", ORTA NÜFUS YOĞUNLUĞUNA SAHİP"
-    elif pop > 0.0:
-        pop_seg = ", DÜŞÜK NÜFUS YOĞUNLUĞUNA SAHİP"
-    else:
-        pop_seg = ""
-
-    lu_pairs = [
-        ("KONUT", konut),
-        ("TİCARET", ticaret),
-        ("SANAYİ/DEPOLAMA", sanayi),
-        ("DONATI", donati),
-        ("TARIM/AÇIK ALAN", tarim),
-    ]
-    lu_pairs_sig = [(lbl, val) for lbl, val in sorted(lu_pairs, key=lambda item: item[1], reverse=True) if val >= 8.0]
-    if not lu_pairs_sig:
-        top_lbl, top_val = max(lu_pairs, key=lambda item: item[1])
-        if top_val > 0.0:
-            lu_pairs_sig = [(top_lbl, top_val)]
-
-    fn_metrics = [f"%{int(round(val))} {lbl}" for lbl, val in lu_pairs_sig]
-    if sit >= 15.0:
-        fn_metrics.append(f"%{int(round(sit))} SİT")
-    if ndens >= 1.0:
-        fn_metrics.append(f"{int(round(ndens))} KİŞİ/HA")
-    elif pop >= 1.0:
-        fn_metrics.append(f"{int(round(pop))} KİŞİ")
-
-    if mezarlik_pay >= 40.0:
-        fn_lead = f"MEZARLIK VE AÇIK YEŞİL ALAN KULLANIMININ HAKİM OLDUĞU{pop_seg} ÖZEL DONATI BÖLGESİDİR"
-    elif konut >= 55.0 and ticaret >= 15.0:
-        fn_lead = f"KONUT VE TİCARET KULLANIMLARININ YER ALDIĞI{pop_seg} YERLEŞİK KENTSEL KONUT BÖLGESİDİR"
-    elif konut >= 55.0:
-        fn_lead = f"KONUT KULLANIMININ HAKİM OLDUĞU{pop_seg} YERLEŞİK KENTSEL KONUT BÖLGESİDİR"
-    elif konut >= 25.0 and ticaret >= 25.0:
-        fn_lead = f"KONUT VE TİCARET KULLANIMLARININ BİRLİKTE YER ALDIĞI{pop_seg} KARMA KENTSEL GELİŞME ALANIDIR"
-    elif konut >= 25.0 and tarim >= 25.0:
-        fn_lead = f"KONUT VE AÇIK ALAN/TARIM KULLANIMLARININ BİRLİKTE YER ALDIĞI{pop_seg} GELİŞME VE SAÇAKLANMA BÖLGESİDİR"
-    elif ticaret >= 45.0:
-        fn_lead = f"TİCARET VE HİZMET KULLANIMLARININ YOĞUNLAŞTIĞI{pop_seg} KENTSEL TİCARET BÖLGESİDİR"
-    elif sanayi >= 40.0:
-        fn_lead = f"SANAYİ VE DEPOLAMA KULLANIMLARININ HAKİM OLDUĞU{pop_seg} ÇALIŞMA VE ÜRETİM ALANIDIR"
-    elif donati >= 45.0:
-        fn_lead = f"SOSYAL VE TEKNİK DONATI KULLANIMLARININ HAKİM OLDUĞU{pop_seg} KENTSEL DONATI BÖLGESİDİR"
-    elif tarim >= 50.0 and konut < 20.0:
-        fn_lead = f"TARIM VE AÇIK ALAN KULLANIMLARININ HAKİM OLDUĞU{pop_seg} KIRSAL VE TARIMSAL KARAKTERLİ BÖLGEDİR"
-    elif len(lu_pairs_sig) >= 2:
-        fn_lead = f"{lu_pairs_sig[0][0]} VE {lu_pairs_sig[1][0]} KULLANIMLARININ BİR ARADA YER ALDIĞI{pop_seg} KARMA KULLANIM BÖLGESİDİR"
-    elif lu_pairs_sig:
-        fn_lead = f"{lu_pairs_sig[0][0]} KULLANIMININ ÖNE ÇIKTIĞI{pop_seg} KENTSEL PLANLAMA BÖLGESİDİR"
-    else:
-        baskin_raw = _tr_upper(rec.get("Baskin_Karakter") or "KARMA KULLANIMLI KENTSEL BÖLGE")
-        fn_lead = f"{baskin_raw} KARAKTERİNDE{pop_seg} PLANLAMA ALT BÖLGESİDİR"
-
-    if fn_metrics:
-        sentences.append(f"{fn_lead} ({', '.join(fn_metrics)}).")
-    else:
-        sentences.append(f"{fn_lead}.")
-
-    # 2. Fiziksel Doku ve Kat Adedi
-    has_buildings = kat > 0.0
-    if has_buildings:
-        if kat < 2.5:
-            kat_cls = "AZ KATLI"
-        elif kat <= 4.5:
-            kat_cls = "ORTA KATLI"
-        else:
-            kat_cls = "YÜKSEK KATLI"
-
-        nizam_low = nizam_raw.lower()
-        if bit >= 50.0 or "bitişik" in nizam_low or "bitisik" in nizam_low:
-            nizam_txt = "BİTİŞİK NİZAM AĞIRLIKLI"
-            nizam_par = f"%{int(round(bit))} BİTİŞİK, ORT. {kat:.1f} KAT"
-        elif "blok" in nizam_low:
-            nizam_txt = "BLOK NİZAM AĞIRLIKLI"
-            nizam_par = f"%{int(round(max(0.0, 100.0 - bit)))} AYRIK/BLOK, ORT. {kat:.1f} KAT"
-        elif "seyrek" in nizam_low:
-            nizam_txt = "SEYREK AYRIK NİZAMLI"
-            nizam_par = f"%{int(round(max(0.0, 100.0 - bit)))} AYRIK, ORT. {kat:.1f} KAT"
-        else:
-            nizam_txt = "AYRIK NİZAM AĞIRLIKLI"
-            nizam_par = f"%{int(round(max(0.0, 100.0 - bit)))} AYRIK, ORT. {kat:.1f} KAT"
-        sentences.append(f"{nizam_txt} VE {kat_cls} DOKUYA SAHİPTİR ({nizam_par}).")
-    elif bina_sayisi > 0.0:
-        sentences.append("SEYREK YAPILAŞMALI AÇIK ALAN DOKUSUNDADIR.")
-    else:
-        sentences.append("YAPISIZ AÇIK ALAN DOKUSUNDADIR.")
-
-    # 3. Yapı Stoğu (Varsa)
-    if has_buildings:
-        if kotu >= 20.0:
-            sentences.append(f"YAPI STOĞUNDA KÖTÜ/YIPRANMIŞ YAPILAR BULUNMAKTA OLUP SAĞLIKLAŞTIRMA GEREKTİRMEKTEDİR (%{int(round(kotu))}).")
-        elif kotu >= 5.0:
-            sentences.append(f"YAPI STOĞUNDA KÖTÜ/YIPRANMIŞ YAPILAR BULUNMAKTADIR (%{int(round(kotu))}).")
-        elif has_durum:
-            sentences.append("YAPI KALİTESİ İYİ DURUMDADIR.")
-    elif bina_sayisi > 0.0 and kotu >= 5.0:
-        sentences.append(f"YAPI STOĞUNDA KÖTÜ/YIPRANMIŞ YAPILAR BULUNMAKTADIR (%{int(round(kotu))}).")
-
-    # 4. Topoğrafya
-    if egim >= 12.0:
-        topo_par = f"ORT. %{egim:.1f}, RAKIM {int(round(rakim))} M" if rakim > 0.0 else f"ORT. %{egim:.1f}"
-        sentences.append(f"TOPOĞRAFİK EĞİM YÜKSEK OLUP YAMAÇ YERLEŞİMİ KARAKTERİ GÖSTERMEKTEDİR ({topo_par}).")
-    elif egim >= 5.0:
-        topo_par = f"%{egim:.1f}, RAKIM {int(round(rakim))} M" if rakim > 0.0 else f"%{egim:.1f}"
-        sentences.append(f"ORTA EĞİMLİ BİR TOPOĞRAFYAYA SAHİPTİR ({topo_par}).")
-    else:
-        topo_par = f"%{egim:.1f}, RAKIM {int(round(rakim))} M" if rakim > 0.0 else f"%{egim:.1f}"
-        sentences.append(f"EĞİM DÜŞÜKTÜR ({topo_par}).")
-
-    # 5. Deprem ve Sel Kırılganlığı (Çok Kısa)
-    dep_up = _tr_upper(dep_sinif)
-    sel_up = _tr_upper(sel_sinif)
-    sel_has_risk = sel_up in ("ÇOK YÜKSEK", "YÜKSEK", "ORTA")
-    sel_suffix = f", SEL KIRILGANLIĞI {sel_up} SEVİYEDEDİR" if sel_has_risk else ""
-    has_fay = 0.0 <= fay_m < 90000.0
-
-    if dep_up in ("ÇOK YÜKSEK", "YÜKSEK", "ORTA"):
-        dep_clause = "DEPREM KIRILGANLIĞI ORTA SEVİYEDEDİR" if dep_up == "ORTA" else f"DEPREM KIRILGANLIĞI {dep_up}TİR"
-        if dep_up == "YÜKSEK":
-            dep_clause = "DEPREM KIRILGANLIĞI YÜKSEKTİR"
-        elif dep_up == "ÇOK YÜKSEK":
-            dep_clause = "DEPREM KIRILGANLIĞI ÇOK YÜKSEKTİR"
-
-        if has_fay:
-            if (fay_min is not None and fay_min == 0.0) or fay_m <= 250.0:
-                lead_fay = "DİRİ FAY HATTINA ÇOK YAKIN OLUP "
-            elif fay_m <= 800.0:
-                lead_fay = "DİRİ FAY ETKİ KUŞAĞINA YAKIN OLUP "
-            else:
-                lead_fay = "FAY HATTINA UZAK OLMAKLA BİRLİKTE "
-            sentences.append(f"{lead_fay}{dep_clause} (ORT. {int(round(fay_m))} M){sel_suffix}.")
-        else:
-            sentences.append(f"{dep_clause}{sel_suffix}.")
-    else:
-        if has_fay and fay_m > 800.0:
-            sentences.append(f"FAY HATTINA UZAKTIR ({int(round(fay_m))} M){sel_suffix}.")
-        elif has_fay:
-            eq_low = dep_up if dep_up in ("DÜŞÜK", "ÇOK DÜŞÜK") else "DÜŞÜK"
-            sentences.append(f"DEPREM KIRILGANLIĞI {eq_low} SEVİYEDEDİR (ORT. {int(round(fay_m))} M){sel_suffix}.")
-        elif sel_has_risk:
-            sentences.append(f"SEL KIRILGANLIĞI {sel_up} SEVİYEDEDİR.")
-
-    # 6. Ulaşım / Sokak Dokusu
-    if yol_w > 0.0:
-        if yol_w < 7.0:
-            w_cls = "DAR SOKAK DOKUSU"
-        elif yol_w <= 12.0:
-            w_cls = "ORTALAMA GENİŞLİKTE SOKAK DOKUSU"
-        else:
-            w_cls = "GENİŞ SOKAK DOKUSU"
-        cikmaz_rnd = int(round(cikmaz))
-        if cikmaz_rnd > 0:
-            sentences.append(f"{w_cls} VE ÇIKMAZ SOKAKLAR ÜZERİNDEN ERİŞİM SAĞLANMAKTADIR (ORT. {yol_w:.1f} M, %{cikmaz_rnd} ÇIKMAZ SOKAK).")
-        else:
-            sentences.append(f"{w_cls} ÜZERİNDEN ERİŞİM SAĞLANMAKTADIR (ORT. {yol_w:.1f} M).")
-
-    # 7. Aktif Donatı Koşulu (< 10.0 m² ve yerleşik konut nüfusu varsa)
-    if pop > 0.0 and konut > 0.0 and 0.0 <= donati_m2 < 10.0:
-        sentences.append(f"AKTİF DONATI ALANI YETERSİZ OLUP AÇIK/YEŞİL ALAN VE SOSYAL DONATI TAKVİYESİNE İHTİYAÇ DUYMAKTADIR (KİŞİ BAŞI {donati_m2:.1f} M²).")
-
-    return _tr_upper(" ".join(sentences))
-
-
 def export_excel_workbook(target_path, records, quick_records=None, P=None, zones=None, is_matrix_only=False):
     """
-    Okunabilirliği yüksek, renkli başlıklı, tüm hücreleri satır kaydırmalı (word-wrap),
-    sütun genişlikleri ve satır yükseklikleri içeriğe göre dinamik ayarlanmış
-    çok sayfalı (.xlsx) Excel çalışma kitabı üretir.
+    Okunabilirliği yüksek, renkli başlıklı, satır kaydırmalı (word-wrap), sütun genişlikleri
+    otomatik ayarlanmış çok sayfalı (.xlsx) Excel çalışma kitabı üretir.
     """
-    import math
     try:
         import openpyxl
         from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -5424,45 +5207,14 @@ def export_excel_workbook(target_path, records, quick_records=None, P=None, zone
     thin_side = Side(border_style="thin", color="CBD5E1")
     cell_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
 
-    def _count_wrapped_lines(text_val, col_w, is_header=False):
-        s = str(text_val if text_val is not None else "")
-        if not s:
-            return 1
-        # Büyük harfli Türkçe / Segoe UI metinlerde karakter taşmasını önleyen güvenli etkin satır genişliği
-        eff_w = max(6, int((col_w - (4.5 if is_header else 3.5)) * 0.90))
-        total = 0
-        for para in s.split("\n"):
-            words = para.split(" ")
-            lines = 1
-            cur = 0
-            for w in words:
-                wlen = len(w)
-                if cur == 0:
-                    while wlen > eff_w:
-                        lines += 1
-                        wlen -= eff_w
-                    cur = wlen
-                elif cur + 1 + wlen <= eff_w:
-                    cur += 1 + wlen
-                else:
-                    lines += 1
-                    while wlen > eff_w:
-                        lines += 1
-                        wlen -= eff_w
-                    cur = wlen
-            total += lines
-        return max(1, total)
-
-    def _populate_sheet(ws, rows_data, col_keys=None, freeze_cell="D2", header_overrides=None):
+    def _populate_sheet(ws, rows_data, col_keys=None, freeze_cell="D2"):
         if not rows_data:
             return
         keys = col_keys or list(rows_data[0].keys())
         keys = [k for k in keys if any(r.get(k) is not None and str(r.get(k)).strip() != "" for r in rows_data)]
-        hdr_map = dict(FRIENDLY_COL_HEADERS)
-        if header_overrides:
-            hdr_map.update(header_overrides)
-        headers = [hdr_map.get(k, k.replace("_", " ")) for k in keys]
+        headers = [FRIENDLY_COL_HEADERS.get(k, k.replace("_", " ")) for k in keys]
         ws.append(headers)
+        ws.row_dimensions[1].height = 30
         for col_idx, k in enumerate(keys, 1):
             c = ws.cell(row=1, column=col_idx)
             c.fill = hdr_fill
@@ -5473,6 +5225,8 @@ def export_excel_workbook(target_path, records, quick_records=None, P=None, zone
         for r_idx, row_dict in enumerate(rows_data, 2):
             vals = [row_dict.get(k) for k in keys]
             ws.append(vals)
+            has_long_text = any(isinstance(v, str) and len(v) > 85 for v in vals)
+            ws.row_dimensions[r_idx].height = 46 if has_long_text else 24
             r_fill = zebra_fill if (r_idx % 2 == 1) else white_fill
             for col_idx, k in enumerate(keys, 1):
                 c = ws.cell(row=r_idx, column=col_idx)
@@ -5481,65 +5235,35 @@ def export_excel_workbook(target_path, records, quick_records=None, P=None, zone
                 if col_idx == 1:
                     c.fill = sub_fill
                     c.font = code_font
-                    c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+                    c.alignment = Alignment(horizontal="center", vertical="center")
                 elif isinstance(val, (int, float)):
                     c.fill = r_fill
                     c.font = body_font
-                    c.alignment = Alignment(horizontal="right", vertical="center", wrap_text=True)
+                    c.alignment = Alignment(horizontal="right", vertical="center")
                 else:
                     c.fill = r_fill
                     c.font = body_font
                     c.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
 
-        # 1. Sütun genişliklerini içerik uzunluğuna göre otomatik ve okunaklı ayarla
-        col_widths = {}
-        long_narrative_cols = (
-            "Bolgeleme_ve_Ayrim_Gerekcesi", "Komsu_Bolgelerden_Ayrim_Nedeni",
-            "Kisa_Metrik_Ozeti", "Olculen_Ozet",
-            "Maruz_Kalma_Aciklamasi", "Hassasiyet_Aciklamasi", "Uyum_Kapasitesi_Aciklamasi",
-            "Deprem_Kirilganlik_Gerekcesi", "Sel_Kirilganlik_Gerekcesi"
-        )
-        medium_text_cols = (
-            "Baskin_Karakter", "Mudahale_Karari", "Plan_Karsiligi",
-            "Kisa_Komsu_Ayrim_Nedeni", "Spacematrix_Tipolojisi", "Sokak_Tahliye_Riski_Sinifi"
-        )
         for col_idx, k in enumerate(keys, 1):
             col_letter = get_column_letter(col_idx)
-            hdr_max = max((len(seg) for seg in str(headers[col_idx - 1]).split("\n")), default=0)
-            cell_max = 0
+            max_len = len(headers[col_idx - 1])
             for r_dict in rows_data:
-                sval = str(r_dict.get(k) if r_dict.get(k) is not None else "")
-                line_max = max((len(seg) for seg in sval.split("\n")), default=0)
-                if line_max > cell_max:
-                    cell_max = line_max
-            content_max = max(hdr_max, cell_max)
-
-            if k == "Kisa_Birlestirme_ve_Ayrim_Ozeti":
-                w = 80
-            elif k in long_narrative_cols:
-                w = max(48, min(72, content_max + 4))
-            elif k in medium_text_cols:
-                w = max(26, min(46, content_max + 4))
+                sval = str(r_dict.get(k) or "")
+                max_len = max(max_len, min(62, len(sval)))
+            if k in (
+                "Bolgeleme_ve_Ayrim_Gerekcesi", "Komsu_Bolgelerden_Ayrim_Nedeni",
+                "Kisa_Birlestirme_ve_Ayrim_Ozeti", "Kisa_Metrik_Ozeti", "Olculen_Ozet",
+                "Maruz_Kalma_Aciklamasi", "Hassasiyet_Aciklamasi", "Uyum_Kapasitesi_Aciklamasi",
+                "Deprem_Kirilganlik_Gerekcesi", "Sel_Kirilganlik_Gerekcesi"
+            ):
+                ws.column_dimensions[col_letter].width = 56
+            elif k in ("Baskin_Karakter", "Mudahale_Karari", "Plan_Karsiligi", "Kisa_Komsu_Ayrim_Nedeni", "Spacematrix_Tipolojisi", "Sokak_Tahliye_Riski_Sinifi"):
+                ws.column_dimensions[col_letter].width = 34
             elif k in ("Bolge_Kodu", "Bolge_No"):
-                w = max(13, hdr_max + 4)
+                ws.column_dimensions[col_letter].width = 13
             else:
-                w = max(14, min(38, content_max + 5))
-            col_widths[col_idx] = w
-            ws.column_dimensions[col_letter].width = w
-
-        # 2. Satır yüksekliklerini sütün genişliği ve metin sarma (wrap) sayısına göre dinamik hesapla
-        hdr_max_lines = max(
-            (_count_wrapped_lines(headers[c_i], col_widths[c_i + 1], is_header=True) for c_i in range(len(keys))),
-            default=1,
-        )
-        ws.row_dimensions[1].height = max(32.0, hdr_max_lines * 16.0 + 10.0)
-
-        for r_idx, row_dict in enumerate(rows_data, 2):
-            row_max_lines = max(
-                (_count_wrapped_lines(row_dict.get(k), col_widths[c_i + 1], is_header=False) for c_i, k in enumerate(keys)),
-                default=1,
-            )
-            ws.row_dimensions[r_idx].height = max(24.0, row_max_lines * 15.5 + 10.0)
+                ws.column_dimensions[col_letter].width = max(14, min(32, max_len + 4))
 
         ws.freeze_panes = freeze_cell
         ws.auto_filter.ref = ws.dimensions
@@ -5551,20 +5275,10 @@ def export_excel_workbook(target_path, records, quick_records=None, P=None, zone
         wb.save(target_path)
         return target_path
 
-    # Sayfa 1: Hızlı ve Sade Özet Tablosu (HIZLI ÖZET Pafta / Lejant Dili ile)
+    # Sayfa 1: Hızlı ve Sade Özet Tablosu (İlk bakışta okuma)
     ws1 = wb.active
     ws1.title = "1_Hizli_Ozet_Tablosu"
     q_recs = quick_records or records
-    z_by_code = {str(z_item.get("kod")): z_item for z_item in (zones or []) if isinstance(z_item, dict) and z_item.get("kod") is not None}
-    ws1_rows = []
-    for idx, r in enumerate(q_recs):
-        rc = dict(r)
-        z_match = z_by_code.get(str(rc.get("Bolge_Kodu")))
-        if z_match is None and zones and idx < len(zones) and isinstance(zones[idx], dict):
-            z_match = zones[idx]
-        rc["Kisa_Birlestirme_ve_Ayrim_Ozeti"] = build_excel_pafta_lejant_summary(rc, z=z_match, P=P)
-        ws1_rows.append(rc)
-
     quick_Sheet_cols = [
         "Bolge_Kodu", "Bolge_No", "Baskin_Karakter", "Bolge_Alani_Ha",
         "Kisa_Metrik_Ozeti", "Kisa_Birlestirme_ve_Ayrim_Ozeti", "Kisa_Komsu_Ayrim_Nedeni",
@@ -5575,13 +5289,7 @@ def export_excel_workbook(target_path, records, quick_records=None, P=None, zone
         "Uyum_Kapasitesi_Derecesi", "Uyum_Kapasitesi_Aciklamasi",
         "Mudahale_Karari", "Plan_Karsiligi"
     ]
-    _populate_sheet(
-        ws1,
-        ws1_rows,
-        col_keys=quick_Sheet_cols,
-        freeze_cell="D2",
-        header_overrides={"Kisa_Birlestirme_ve_Ayrim_Ozeti": "HIZLI ÖZET"},
-    )
+    _populate_sheet(ws1, q_recs, col_keys=quick_Sheet_cols, freeze_cell="D2")
 
     # Sayfa 2: Temel Sayısal Metrikler Tablosu (Sayısal analiz / grafik için)
     ws2 = wb.create_sheet(title="2_Sayisal_Planlama_Tablosu")
