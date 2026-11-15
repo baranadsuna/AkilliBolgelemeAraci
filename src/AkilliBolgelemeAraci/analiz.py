@@ -3591,22 +3591,23 @@ def generate_truthful_zone_identity(z, zone_seq_idx):
         return karakter, gerekce, kombinasyon, mudahale, plan
 
     # 7. KONUT DOKUSU (%100 veya Ağırlıklı Konut - Sıfır Halüsinasyon)
+    yd_uip = yd if any(tok in yd.lower() for tok in ("nizam", "yapısız", "seyrek", "doku")) else f"{yd} Nizam"
     if taks < 0.20 and kat <= 2.2:
         density_label = "Düşük Yoğunluklu Seyrek Konut Dokusu"
         nip_code = "Düşük Yoğunluklu Konut Alanı (E=0.40)"
-        uip_code = f"{yd} Nizam Konut (Az Katlı, ~{max(1, round(kat))} Kat)"
+        uip_code = f"{yd_uip} Konut (Az Katlı, ~{max(1, round(kat))} Kat)"
     elif taks >= 0.40 or (taks >= 0.28 and kat >= 3.2):
         density_label = "Yüksek Yoğunluklu Sıkı Konut Dokusu"
         nip_code = "Yüksek Yoğunluklu Yerleşik Konut Alanı"
-        uip_code = f"{yd} Nizam Çok Katlı Konut (TAKS %{taks*100:.0f})"
+        uip_code = f"{yd_uip} Çok Katlı Konut (TAKS %{taks*100:.0f})"
     elif taks >= 0.28 or kat >= 4.0:
         density_label = "Yüksek Yoğunluklu Çok Katlı Konut Dokusu"
         nip_code = "Yüksek Yoğunluklu Konut Alanı"
-        uip_code = f"{yd} Nizam Çok Katlı Konut"
+        uip_code = f"{yd_uip} Çok Katlı Konut"
     else:
         density_label = "Orta Yoğunluklu Düzenli Konut Yerleşimi"
         nip_code = "Orta Yoğunluklu Konut Alanı"
-        uip_code = f"{yd} Nizam Konut"
+        uip_code = f"{yd_uip} Konut"
 
     no_tic_txt = "ticaret alanı bulunmayan, " if ticaret < 0.02 else ""
     don_dist_txt = f" (en yakın donatı {donati_dist:.0f}m)" if donati_dist is not None else ""
@@ -3626,7 +3627,7 @@ def generate_truthful_zone_identity(z, zone_seq_idx):
         kombinasyon = f"Konut (%{konut*100:.0f}) + Dere Yakınlığı ({dere:.0f}m)"
     elif kotu_pay >= 0.25:
         issue_label = "ve Yapı Stoğu Yenileme / Sağlıklaştırma Alanı"
-        gerekce = f"%{konut*100:.0f} konut dokusunda %{kotu_pay*100:.1f} oranında kötü/yıpranmış yapı ve {yd} nizam yapılaşma."
+        gerekce = f"%{konut*100:.0f} konut dokusunda %{kotu_pay*100:.1f} oranında kötü/yıpranmış yapı ve {yd_uip} yapılaşma."
         mudahale = "Yıpranmış yapı stoğunun güçlendirilmesi veya ada bazlı kentsel sağlıklaştırma uygulanması"
         plan = f"1/5000 NİP: Kentsel Yenileme ve Konut Alanı; 1/1000 UİP: {uip_code} Yenileme Adaları"
         kombinasyon = f"Konut (%{konut*100:.0f}) + Kötü Yapı (%{kotu_pay*100:.1f}) + TAKS %{taks*100:.1f}"
@@ -3638,7 +3639,7 @@ def generate_truthful_zone_identity(z, zone_seq_idx):
         )
         mudahale = "Mevcut konut dokusunun iyileştirilmesi; erişim yarıçapı içinde mahalle parkı, çocuk oyun alanı ve temel okul/donatı rezervi üretilmesi"
         plan = f"1/5000 NİP: {nip_code} ve Sosyal Donatı Rezervi; 1/1000 UİP: {uip_code} + Park/Okul Donatısı"
-        kombinasyon = f"Konut (%{konut*100:.0f}) + Donatı Eksikliği + {yd} Nizam"
+        kombinasyon = f"Konut (%{konut*100:.0f}) + Donatı Eksikliği + {yd_uip}"
     elif bos_arazi >= 0.45:
         issue_label = "ve Boş İmar Parseli Rezerv Gelişme Alanı"
         gerekce = f"%{bos_arazi*100:.0f} boş arsa oranı ve %{konut*100:.0f} konut dokusu ile planlı gelişme kapasitesi yüksek alan."
@@ -3656,13 +3657,13 @@ def generate_truthful_zone_identity(z, zone_seq_idx):
         gerekce = f"%{konut*100:.0f} konut dokusu içinde %{donati_pay*100:.1f} donatı payı{don_dist_txt}, TAKS %{taks*100:.1f} ve {kat:.1f} kat düzeni."
         mudahale = "Mevcut konut-donatı dengesinin ve yürünebilir yeşil/sosyal altyapı ağının korunması"
         plan = f"1/5000 NİP: {nip_code}; 1/1000 UİP: {uip_code}"
-        kombinasyon = f"Konut (%{konut*100:.0f}) + Donatı Mevcut + {yd} Nizam"
+        kombinasyon = f"Konut (%{konut*100:.0f}) + Donatı Mevcut + {yd_uip}"
     else:
-        issue_label = f"({yd} Nizam Yerleşik Konut)"
-        gerekce = f"%{konut*100:.0f} konut ağırlıklı yerleşik doku, TAKS %{taks*100:.1f}, ortalama {kat:.1f} kat ve {yd} yapılaşma düzeni."
+        issue_label = f"({yd_uip} Yerleşik Konut)"
+        gerekce = f"%{konut*100:.0f} konut ağırlıklı yerleşik doku, TAKS %{taks*100:.1f}, ortalama {kat:.1f} kat ve {yd_uip} yapılaşma düzeni."
         mudahale = "Mevcut morfolojik nizamın ve sokak altyapısının korunarak iyileştirilmesi"
         plan = f"1/5000 NİP: {nip_code}; 1/1000 UİP: {uip_code}"
-        kombinasyon = f"Konut (%{konut*100:.0f}) + TAKS %{taks*100:.1f} + {yd} Nizam"
+        kombinasyon = f"Konut (%{konut*100:.0f}) + TAKS %{taks*100:.1f} + {yd_uip}"
 
     karakter = f"{density_label} {issue_label}"
     return karakter, gerekce, kombinasyon, mudahale, plan
@@ -4327,6 +4328,7 @@ CANDIDATE_FIELDS = [
     ("Bolge_Kodu", _QVAR_STRING),
     ("Bolge_No", _QVAR_INT),
     ("Baskin_Karakter", _QVAR_STRING),
+    ("Pafta_Lejant_Sentez_Metni", _QVAR_STRING),
     ("Bolge_Alani_Ha", _QVAR_DOUBLE),
     ("Kisa_Metrik_Ozeti", _QVAR_STRING),
     ("Kisa_Birlestirme_ve_Ayrim_Ozeti", _QVAR_STRING),
@@ -4392,6 +4394,7 @@ QUICK_SUMMARY_FIELD_NAMES = [
     "Bolge_Kodu",
     "Bolge_No",
     "Baskin_Karakter",
+    "Pafta_Lejant_Sentez_Metni",
     "Bolge_Alani_Ha",
     "Kisa_Metrik_Ozeti",
     "Kisa_Birlestirme_ve_Ayrim_Ozeti",
@@ -4769,6 +4772,274 @@ def compute_vulnerability(z):
     }
 
 
+def _tr_lcfirst(txt):
+    """Türkçe karakter uyumlu şekilde metnin ilk harfini küçük harfe çevirir."""
+    s = (txt or "").strip()
+    if not s:
+        return ""
+    tr_map = {"İ": "i", "I": "ı", "Ü": "ü", "Ö": "ö", "Ş": "ş", "Ç": "ç", "Ğ": "ğ"}
+    return tr_map.get(s[0], s[0].lower()) + s[1:]
+
+
+def build_pafta_lejant_synthesis(z, vuln=None):
+    """
+    Her alt bölge için ölçülen gerçek mekânsal, morfolojik, topoğrafik ve E×S/AC afet
+    göstergelerinden tutarlı ve okunabilir pafta/lejant sentez açıklama metni üretir.
+    """
+    p = z.get("pay") or {}
+    sub_p = z.get("sub_lu_pay") or {}
+    ext = z.get("ext") or {}
+    ext_min = z.get("ext_min") or {}
+    ha = (z["area"] / 10000.0) if (z.get("area") or 0.0) > 0 else 1.0
+    n_bina = int(z.get("n") or 0)
+    nufus = float(z.get("nufus") or 0.0)
+    dens = nufus / ha
+    taks = float(z.get("taks") or 0.0)
+    kat = float(z.get("kat") or 0.0)
+    yd = (z.get("yd_dom") or "Ayrık").strip()
+    bitisik = float(z.get("bitisik") or 0.0)
+    bos_arazi = float(z.get("bos_arazi_orani", 0.0) or 0.0)
+
+    _kotu_s, sit2_pct, _ = get_extra_Sit_params(z)
+    kotu_raw = z.get("kotu_pay") if z.get("kotu_pay") is not None else (ext.get("kotu_yapi") or 0.0)
+    kotu_pct = max(float(_kotu_s or 0.0), float(kotu_raw or 0.0) * 100.0)
+    egim = z.get("egim") if z.get("egim") is not None else ext.get("egim")
+    rakim = z.get("rakim") if z.get("rakim") is not None else ext.get("rakim")
+    fay = ext.get("fay")
+    fay_min = ext_min.get("fay")
+    dere = ext.get("dere")
+    dere_min = ext_min.get("dere")
+    yg = z.get("yg")
+    dead_ratio = z.get("cikmaz_sokak_orani")
+    kisi_don = z.get("kisi_basi_donati_m2")
+    donati_dist = z.get("donati_mesafe_m")
+
+    vuln = vuln or z.get("vuln") or compute_vulnerability(z)
+    dep_sinif = vuln.get("deprem_kirilganlik", "Düşük")
+    sel_sinif = vuln.get("sel_kirilganlik", "Düşük")
+
+    has_built = (
+        (n_bina > 0 and (taks >= 0.015 or (n_bina / max(1.0, ha)) >= 0.35 or nufus >= 15.0))
+        or taks >= 0.015
+        or nufus >= 15.0
+    )
+
+    konut = float(p.get("konut", 0.0))
+    ticaret = float(p.get("ticaret", 0.0))
+    sanayi = float(p.get("sanayi", 0.0))
+    tarim = float(p.get("tarim", 0.0))
+    donati_pay = float(p.get("donati", 0.0))
+    sit = float(p.get("sit", 0.0))
+    sit_ext = float(ext.get("sit") or 0.0)
+    mezarlik = float(sub_p.get("mezarlik", 0.0))
+
+    def _sec_uses(exclude_keys):
+        labels_map = (
+            ("ticaret", "ticaret"),
+            ("donati", "kamusal donatı"),
+            ("tarim", "tarım/boş parsel"),
+            ("sanayi", "yerel sanayi/işletme"),
+            ("konut", "konut"),
+        )
+        items = []
+        for k, lbl in labels_map:
+            if k in exclude_keys:
+                continue
+            val_p = float(p.get(k, 0.0))
+            if val_p >= 0.10:
+                items.append(f"%{val_p * 100:.0f} {lbl}")
+        return f" ({', '.join(items[:2])} destekli)" if items else ""
+
+    sents = []
+
+    # 1. Kullanım karakteri ve nüfus
+    if dens >= 100.0:
+        dens_lbl = "yüksek nüfus yoğunluğuna"
+    elif dens >= 65.0:
+        dens_lbl = "orta-yüksek nüfus yoğunluğuna"
+    elif dens >= 25.0:
+        dens_lbl = "orta yoğunluklu yerleşik nüfusa"
+    else:
+        dens_lbl = "düşük yoğunluklu yerleşik nüfusa"
+
+    pop_paren = (
+        f" ({dens:.0f} kişi/ha, toplam {int(round(nufus))} kişi)"
+        if nufus >= 15.0 else " (yerleşik konut nüfusu bulunmayan)"
+    )
+
+    if mezarlik >= 0.25:
+        sents.append(
+            f"Mezarlık alanı (%{mezarlik * 100:.0f}) ağırlıklı açık yeşil dokuya sahip, çevresinde yapılaşmadan arındırılmış koruma tamponu gerektiren kentsel mezarlık bölgesidir."
+        )
+    elif donati_pay >= 0.35:
+        sec = f" yerleşik konut dokusuyla (%{konut * 100:.0f})" if konut >= 0.15 else _sec_uses({"donati"})
+        sents.append(
+            f"Eğitim, sağlık, park ve kamusal hizmet alanlarının (%{donati_pay * 100:.0f} donatı){sec} dengeli biçimde bütünleştiği kentsel kamusal servis ve sosyal donatı odak alanıdır."
+        )
+    elif sanayi >= 0.40:
+        if konut >= 0.20:
+            sents.append(
+                f"Sanayi ve imalat kullanımlarının (%{sanayi * 100:.0f}) yerleşik konut dokusuyla (%{konut * 100:.0f}) sınır teması kurduğu, çevresel tampon ve geçiş düzenlemesi gerektiren hassas arayüz bölgesidir."
+            )
+        else:
+            pop_note = "yerleşik konut nüfusu bulunmayan" if nufus < 15.0 else f"düşük yerleşik konut paylı ({int(round(nufus))} kişi)"
+            sents.append(
+                f"Bölge ağırlıklı olarak sanayi, imalat ve depolama fonksiyonlarının yer aldığı (%{sanayi * 100:.0f} sanayi){_sec_uses({'sanayi'})}, {pop_note} geniş ölçekli üretim ve lojistik alanıdır."
+            )
+    elif tarim >= 0.55 or (not has_built and konut < 0.20):
+        if tarim >= 0.95 and not has_built:
+            sents.append(
+                f"Tamamı (%{tarim * 100:.0f}) tarımsal üretim ve yapısız doğal açık alan niteliğinde olan, üzerinde yapılaşma veya yerleşik nüfus bulunmayan mutlak korunması gereken ekolojik ve tarımsal eşik kuşağıdır."
+            )
+        elif konut >= 0.15:
+            sents.append(
+                f"Ağırlıklı olarak tarım ve açık alanların (%{tarim * 100:.0f}) hakim olduğu, seyrek kırsal yerleşim dokusunun (%{konut * 100:.0f} konut){_sec_uses({'tarim', 'konut'})} yer aldığı geçiş zonudur."
+            )
+        else:
+            sents.append(
+                f"Büyük bölümü tarım ve açık alan niteliğinde olup (%{max(tarim, bos_arazi) * 100:.0f}){_sec_uses({'tarim'})}, yerleşik konut nüfusu bulunmayan koruma öncelikli tarımsal/ekolojik açık alan kuşağıdır."
+            )
+    elif max(sit, sit_ext) >= 0.30:
+        sit_pct = max(sit, sit_ext) * 100.0
+        tesc_txt = f" ve %{sit2_pct:.0f} tescilli kültür varlığı" if sit2_pct >= 1.0 else ""
+        sents.append(
+            f"%{sit_pct:.0f} oranında tarihi kentsel sit alanı{tesc_txt} barındıran, %{konut * 100:.0f} konut ve %{ticaret * 100:.0f} geleneksel ticaret dokusuyla kentin tarihsel kimliğini yansıtan koruma öncelikli yerleşim alanıdır."
+        )
+    elif ticaret >= 0.30:
+        if konut >= 0.25:
+            sents.append(
+                f"Ticaret (%{ticaret * 100:.0f}) ve konut (%{konut * 100:.0f}) fonksiyonlarının iç içe geçtiği, merkezi iş alanı (MİA) niteliği taşıyan hareketli kentsel karma kullanım bölgesidir."
+            )
+        else:
+            sents.append(
+                f"Ölçülen ticari kullanım yoğunluğu (%{ticaret * 100:.0f}) ve hizmet birimleri ağırlığıyla öne çıkan merkezi/bölgesel ticaret odak alanıdır."
+            )
+    else:
+        if bos_arazi >= 0.45:
+            sents.append(
+                f"Mevcut durumda %{bos_arazi * 100:.0f} boş/rezerv parsel stoğu ile %{konut * 100:.0f} konut dokusunu{_sec_uses({'konut'})} bir arada barındıran, yüksek gelişme potansiyeline sahip planlı rezerv konut ve kentsel genişleme alanıdır."
+            )
+        elif nufus >= 15.0:
+            sents.append(
+                f"%{konut * 100:.0f} oranında konut kullanımının hakim olduğu{_sec_uses({'konut'})}, {dens_lbl}{pop_paren} sahip yerleşik kentsel konut bölgesidir."
+            )
+        else:
+            sents.append(
+                f"%{konut * 100:.0f} konut dokusunun{_sec_uses({'konut'})} yer aldığı düşük nüfus yoğunluklu kentsel yerleşim bölgesidir."
+            )
+
+    # 2. Fiziksel doku, kat ve yapı kalitesi
+    if not has_built:
+        sents.append(
+            "Alanda yapılaşma bulunmamakta olup toprak geçirgenliği %100 düzeyindedir; açık ve tarımsal zemin bütünlüğünün korunması esastır."
+        )
+    else:
+        if bitisik >= 0.45:
+            nizam_desc = f"bitişik nizam ağırlıklı (%{bitisik * 100:.0f} bitişik)"
+        else:
+            yd_l = _tr_lcfirst(yd)
+            nizam_desc = yd_l if ("doku" in yd_l or "alan" in yd_l) else f"{yd_l} ağırlıklı"
+        kat_desc = f"ortalama {kat:.1f} katlı" if kat > 0.0 else "düşük/yapısız dokulu"
+        sents.append(
+            f"Fiziksel doku {nizam_desc}, {kat_desc} ve TAKS %{taks * 100:.1f} taban alanı sıkışıklığına sahiptir."
+        )
+        if kotu_pct >= 25.0:
+            sents.append(
+                f"Yapı stoğunun önemli bir kısmı (%{kotu_pct:.0f}) kötü/bakımsız durumda olup acil iyileştirme veya sağlıklaştırma gerektirmektedir."
+            )
+        elif kotu_pct >= 8.0:
+            sents.append(
+                f"Yapı stoğunda %{kotu_pct:.0f} oranında kötü/yıpranmış yapı tespit edilmiştir."
+            )
+        elif n_bina > 0:
+            sents.append("Mevcut yapı kalitesi genel olarak iyi ve bakımlı durumdadır.")
+
+    # 3. Topoğrafya ve doğal eşikler (Diri Fay & Dere / Sel)
+    nat_parts = []
+    rakim_s = f", rakım {float(rakim):.0f} m" if rakim is not None else ""
+    if egim is not None:
+        eg_f = float(egim)
+        if eg_f >= 15.0:
+            nat_parts.append(f"Topoğrafik eğim yüksek olup (ort. %{eg_f:.1f}{rakim_s}) yamaç yerleşimi karakteri göstermektedir")
+        elif eg_f >= 8.0:
+            nat_parts.append(f"Orta eğimli (%{eg_f:.1f}{rakim_s}) bir topoğrafyaya sahiptir")
+        else:
+            nat_parts.append(f"Eğim düşük olup (%{eg_f:.1f}{rakim_s}) düz ve yerleşime elverişli bir topoğrafya sunmaktadır")
+
+    if fay is not None or fay_min is not None:
+        if fay_min is not None and float(fay_min) <= 20.0:
+            fay_ort_s = f", ort. {float(fay):.0f} m" if fay is not None else ""
+            nat_parts.append(
+                f"doğal eşikler açısından diri fay hattı doğrudan bölge içinden/sınırından geçmekte olup (min. {float(fay_min):.0f} m{fay_ort_s}) deprem kırılganlığı '{dep_sinif}' düzeyindedir"
+            )
+        elif fay is not None and float(fay) < 350.0:
+            nat_parts.append(
+                f"doğal eşikler açısından diri fay hattına çok yakın konumda bulunmakta olup (ort. {float(fay):.0f} m) deprem kırılganlığı '{dep_sinif}' düzeyindedir"
+            )
+        elif fay is not None and float(fay) < 900.0:
+            nat_parts.append(
+                f"doğal eşikler açısından diri fay etki kuşağına yakın konumda yer almakta (ort. {float(fay):.0f} m) ve deprem kırılganlığı '{dep_sinif}' seviyesindedir"
+            )
+        elif fay is not None:
+            nat_parts.append(
+                f"doğal eşikler açısından diri fay hattına uzak konumda olup (ort. {float(fay):.0f} m) deprem kırılganlığı '{dep_sinif}' düzeyindedir"
+            )
+
+    if dere_min is not None and float(dere_min) <= 35.0 and dere is not None:
+        nat_parts.append(
+            f"akarsu/dere yatağı bölgeden geçmekte olup (min. {float(dere_min):.0f} m, ort. {float(dere):.0f} m) sel/taşkın hassasiyeti ('{sel_sinif}' düzey) göz önünde bulundurulmalıdır"
+        )
+    elif dere is not None and float(dere) <= 800.0:
+        nat_parts.append(
+            f"dere yatağı ve taşkın tampon bölgesine yakınlığı (ort. {float(dere):.0f} m) nedeniyle sel ve yüzeysel akış hassasiyeti ('{sel_sinif}' düzey) göz önünde bulundurulmalıdır"
+        )
+    elif has_built and taks >= 0.40:
+        nat_parts.append(
+            f"yüksek taban alanı sıkışıklığı (TAKS %{taks * 100:.0f}) geçirimsiz yüzey oranını artırarak yağışlı dönemlerde yüzeysel akış yükü ('{sel_sinif}' sel kırılganlığı) oluşturmaktadır"
+        )
+
+    if nat_parts:
+        if len(nat_parts) == 1:
+            sents.append(nat_parts[0] + ".")
+        else:
+            sents.append(nat_parts[0] + "; " + ", ".join(nat_parts[1:]) + ".")
+
+    # 4. Ulaşım ve sosyal donatı erişimi
+    if yg is not None:
+        street_s = f"ort. {float(yg):.1f} m genişliğindeki sokak dokusu"
+        if dead_ratio is not None and float(dead_ratio) >= 0.08:
+            street_s += f" ve %{float(dead_ratio) * 100:.0f} çıkmaz sokak oranıyla"
+        road_prefix = f"Ulaşım ve altyapı bakımından {street_s} üzerinden erişim sağlanmakta"
+        if nufus < 15.0:
+            sents.append(f"{road_prefix} olup yerleşik konut nüfusu bulunmadığından konut donatı standardı aranmamaktadır.")
+        elif kisi_don is not None:
+            if float(kisi_don) < 10.0:
+                sents.append(
+                    f"{road_prefix} olup kişi başı {float(kisi_don):.1f} m² aktif donatı payıyla açık/yeşil alan ve sosyal donatı takviyesine ihtiyaç duymaktadır."
+                )
+            elif float(kisi_don) < 15.0:
+                sents.append(
+                    f"{road_prefix} olup kişi başı {float(kisi_don):.1f} m² aktif donatı alanıyla orta düzeyde donatı erişimine sahiptir."
+                )
+            else:
+                sents.append(
+                    f"{road_prefix} olup kişi başı {float(kisi_don):.1f} m² aktif donatı alanıyla sosyal altyapı erişimi yeterli düzeydedir."
+                )
+        elif donati_dist is not None:
+            sents.append(
+                f"{road_prefix} olup en yakın sosyal donatı alanına ortalama {float(donati_dist):.0f} m mesafede konumlanmaktadır."
+            )
+        else:
+            sents.append(f"Ulaşım ve altyapı bakımından {street_s} üzerinden erişim sağlanmaktadır.")
+
+    # 5. Planlama müdahale kararı
+    mudahale = (z.get("mudahale_karari") or "").strip()
+    if mudahale:
+        sents.append(f"Planlama kararlarında {_tr_lcfirst(mudahale)} hedeflenmektedir.")
+
+    return " ".join(s.strip() for s in sents if s and s.strip())
+
+
 def zone_record(z):
     p = z.get("pay") or {}
 
@@ -4780,10 +5051,13 @@ def zone_record(z):
     kotu_pct, sit2_pct, sit3_pct = get_extra_Sit_params(z)
     vuln = compute_vulnerability(z)
     z["vuln"] = vuln
+    pafta_lejant = z.get("pafta_lejant") or build_pafta_lejant_synthesis(z, vuln=vuln)
+    z["pafta_lejant"] = pafta_lejant
     return {
         "Bolge_Kodu": z["kod"],
         "Bolge_No": int(re.sub(r"\D", "", z["kod"]) or 0),
         "Baskin_Karakter": z["karakter"],
+        "Pafta_Lejant_Sentez_Metni": pafta_lejant,
         "Bolge_Alani_Ha": r(ha, 2),
         "Kisa_Metrik_Ozeti": z.get("kisa_ozet") or describe_quick_summary(z),
         "Kisa_Birlestirme_ve_Ayrim_Ozeti": z.get("kisa_gerekce") or build_quick_rationale(z, z.get("kisa_ayrim_nedeni", "")),
@@ -5116,6 +5390,8 @@ FRIENDLY_COL_HEADERS = {
     "Bolge_Kodu": "Bölge Kodu / Zone Code",
     "Bolge_No": "Bölge No",
     "Baskin_Karakter": "Baskın Kentsel Karakter (Sub-Zone Identity)",
+    "Pafta_Lejant_Sentez_Metni": "Pafta Lejant / Sentez Açıklama Metni",
+    "Deprem_Sel_Riski": "Deprem / Sel Riski",
     "Bolge_Alani_Ha": "Alan (Hektar)",
     "Bolge_Alani_m2": "Alan (m²)",
     "Kisa_Metrik_Ozeti": "Hızlı Metrik Özeti (% Kullanım | Fay | Dere | Eğim | Donatı | TAKS | Kat | Nüfus)",
@@ -5207,14 +5483,16 @@ def export_excel_workbook(target_path, records, quick_records=None, P=None, zone
     thin_side = Side(border_style="thin", color="CBD5E1")
     cell_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
 
-    def _populate_sheet(ws, rows_data, col_keys=None, freeze_cell="D2"):
+    def _populate_sheet(ws, rows_data, col_keys=None, freeze_cell="D2", header_overrides=None, width_overrides=None):
         if not rows_data:
             return
         keys = col_keys or list(rows_data[0].keys())
         keys = [k for k in keys if any(r.get(k) is not None and str(r.get(k)).strip() != "" for r in rows_data)]
-        headers = [FRIENDLY_COL_HEADERS.get(k, k.replace("_", " ")) for k in keys]
+        h_ovr = header_overrides or {}
+        w_ovr = width_overrides or {}
+        headers = [h_ovr.get(k, FRIENDLY_COL_HEADERS.get(k, k.replace("_", " "))) for k in keys]
         ws.append(headers)
-        ws.row_dimensions[1].height = 30
+        ws.row_dimensions[1].height = 32
         for col_idx, k in enumerate(keys, 1):
             c = ws.cell(row=1, column=col_idx)
             c.fill = hdr_fill
@@ -5222,16 +5500,53 @@ def export_excel_workbook(target_path, records, quick_records=None, P=None, zone
             c.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             c.border = cell_border
 
+        col_widths = []
+        for col_idx, k in enumerate(keys, 1):
+            col_letter = get_column_letter(col_idx)
+            max_len = len(headers[col_idx - 1])
+            for r_dict in rows_data:
+                sval = str(r_dict.get(k) or "")
+                max_len = max(max_len, min(62, len(sval)))
+            if k in w_ovr:
+                cw = w_ovr[k]
+            elif k == "Pafta_Lejant_Sentez_Metni":
+                cw = 76
+            elif k in (
+                "Bolgeleme_ve_Ayrim_Gerekcesi", "Komsu_Bolgelerden_Ayrim_Nedeni",
+                "Kisa_Birlestirme_ve_Ayrim_Ozeti", "Kisa_Metrik_Ozeti", "Olculen_Ozet",
+                "Maruz_Kalma_Aciklamasi", "Hassasiyet_Aciklamasi", "Uyum_Kapasitesi_Aciklamasi",
+                "Deprem_Kirilganlik_Gerekcesi", "Sel_Kirilganlik_Gerekcesi"
+            ):
+                cw = 56
+            elif k in (
+                "Baskin_Karakter", "Mudahale_Karari", "Plan_Karsiligi",
+                "Kisa_Komsu_Ayrim_Nedeni", "Spacematrix_Tipolojisi", "Sokak_Tahliye_Riski_Sinifi"
+            ):
+                cw = 34
+            elif k in ("Bolge_Kodu", "Bolge_No", "Bolge_Alani_Ha"):
+                cw = 13
+            elif k == "Deprem_Sel_Riski":
+                cw = 26
+            else:
+                cw = max(14, min(32, max_len + 4))
+            ws.column_dimensions[col_letter].width = cw
+            col_widths.append(cw)
+
         for r_idx, row_dict in enumerate(rows_data, 2):
             vals = [row_dict.get(k) for k in keys]
             ws.append(vals)
-            has_long_text = any(isinstance(v, str) and len(v) > 85 for v in vals)
-            ws.row_dimensions[r_idx].height = 46 if has_long_text else 24
+            max_lines = 1
             r_fill = zebra_fill if (r_idx % 2 == 1) else white_fill
             for col_idx, k in enumerate(keys, 1):
                 c = ws.cell(row=r_idx, column=col_idx)
                 val = row_dict.get(k)
                 c.border = cell_border
+                if val is not None:
+                    sval = str(val)
+                    eff_w = max(10, col_widths[col_idx - 1] - 3)
+                    c_lines = sum(max(1, math.ceil(len(ln) / eff_w)) for ln in sval.splitlines()) if sval else 1
+                    if c_lines > max_lines:
+                        max_lines = c_lines
                 if col_idx == 1:
                     c.fill = sub_fill
                     c.font = code_font
@@ -5244,26 +5559,7 @@ def export_excel_workbook(target_path, records, quick_records=None, P=None, zone
                     c.fill = r_fill
                     c.font = body_font
                     c.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
-
-        for col_idx, k in enumerate(keys, 1):
-            col_letter = get_column_letter(col_idx)
-            max_len = len(headers[col_idx - 1])
-            for r_dict in rows_data:
-                sval = str(r_dict.get(k) or "")
-                max_len = max(max_len, min(62, len(sval)))
-            if k in (
-                "Bolgeleme_ve_Ayrim_Gerekcesi", "Komsu_Bolgelerden_Ayrim_Nedeni",
-                "Kisa_Birlestirme_ve_Ayrim_Ozeti", "Kisa_Metrik_Ozeti", "Olculen_Ozet",
-                "Maruz_Kalma_Aciklamasi", "Hassasiyet_Aciklamasi", "Uyum_Kapasitesi_Aciklamasi",
-                "Deprem_Kirilganlik_Gerekcesi", "Sel_Kirilganlik_Gerekcesi"
-            ):
-                ws.column_dimensions[col_letter].width = 56
-            elif k in ("Baskin_Karakter", "Mudahale_Karari", "Plan_Karsiligi", "Kisa_Komsu_Ayrim_Nedeni", "Spacematrix_Tipolojisi", "Sokak_Tahliye_Riski_Sinifi"):
-                ws.column_dimensions[col_letter].width = 34
-            elif k in ("Bolge_Kodu", "Bolge_No"):
-                ws.column_dimensions[col_letter].width = 13
-            else:
-                ws.column_dimensions[col_letter].width = max(14, min(32, max_len + 4))
+            ws.row_dimensions[r_idx].height = max(24, min(280, round(max_lines * 14.5 + 10, 1)))
 
         ws.freeze_panes = freeze_cell
         ws.auto_filter.ref = ws.dimensions
@@ -5275,12 +5571,52 @@ def export_excel_workbook(target_path, records, quick_records=None, P=None, zone
         wb.save(target_path)
         return target_path
 
+    q_recs = [dict(rec) for rec in (quick_records or records)]
+    if zones and len(zones) == len(q_recs):
+        for rec_i, rec_d in enumerate(q_recs):
+            if not rec_d.get("Pafta_Lejant_Sentez_Metni"):
+                rec_d["Pafta_Lejant_Sentez_Metni"] = zones[rec_i].get("pafta_lejant") or build_pafta_lejant_synthesis(zones[rec_i])
+
+    # Sayfa 0: Pafta Lejant & Sentez Açıklama Metinleri (Raporlama / Pafta Sunumu)
+    lejant_rows = []
+    for rec_d in q_recs:
+        dep_c = rec_d.get("Deprem_Kirilganlik_Sinifi") or "—"
+        sel_c = rec_d.get("Sel_Kirilganlik_Sinifi") or "—"
+        lejant_txt = rec_d.get("Pafta_Lejant_Sentez_Metni") or rec_d.get("Kisa_Birlestirme_ve_Ayrim_Ozeti") or ""
+        lejant_rows.append({
+            "Bolge_Kodu": rec_d.get("Bolge_Kodu"),
+            "Bolge_No": rec_d.get("Bolge_No"),
+            "Bolge_Alani_Ha": rec_d.get("Bolge_Alani_Ha"),
+            "Baskin_Karakter": rec_d.get("Baskin_Karakter"),
+            "Pafta_Lejant_Sentez_Metni": lejant_txt,
+            "Deprem_Sel_Riski": f"Deprem: {dep_c} | Sel: {sel_c}",
+            "Plan_Karsiligi": rec_d.get("Plan_Karsiligi"),
+            "Mudahale_Karari": rec_d.get("Mudahale_Karari"),
+        })
+
+    ws_lejant = wb.active
+    ws_lejant.title = "0_Lejant_Sentez_Metinleri"
+    _populate_sheet(
+        ws_lejant,
+        lejant_rows,
+        col_keys=[
+            "Bolge_Kodu", "Bolge_No", "Bolge_Alani_Ha", "Baskin_Karakter",
+            "Pafta_Lejant_Sentez_Metni", "Deprem_Sel_Riski", "Plan_Karsiligi", "Mudahale_Karari"
+        ],
+        freeze_cell="D2",
+        header_overrides={
+            "Bolge_Alani_Ha": "Alan (Ha)",
+            "Baskin_Karakter": "Baskın Kentsel Karakter (Başlık)",
+            "Pafta_Lejant_Sentez_Metni": "Pafta Lejant / Sentez Açıklama Metni (Detaylı)",
+            "Plan_Karsiligi": "1/5000 NİP & 1/1000 UİP Plan Karşılığı",
+        },
+        width_overrides={"Pafta_Lejant_Sentez_Metni": 95, "Plan_Karsiligi": 38, "Mudahale_Karari": 38},
+    )
+
     # Sayfa 1: Hızlı ve Sade Özet Tablosu (İlk bakışta okuma)
-    ws1 = wb.active
-    ws1.title = "1_Hizli_Ozet_Tablosu"
-    q_recs = quick_records or records
+    ws1 = wb.create_sheet(title="1_Hizli_Ozet_Tablosu")
     quick_Sheet_cols = [
-        "Bolge_Kodu", "Bolge_No", "Baskin_Karakter", "Bolge_Alani_Ha",
+        "Bolge_Kodu", "Bolge_No", "Baskin_Karakter", "Pafta_Lejant_Sentez_Metni", "Bolge_Alani_Ha",
         "Kisa_Metrik_Ozeti", "Kisa_Birlestirme_ve_Ayrim_Ozeti", "Kisa_Komsu_Ayrim_Nedeni",
         "Deprem_Kirilganlik_Sinifi", "Deprem_Kirilganlik_Gerekcesi",
         "Sel_Kirilganlik_Sinifi", "Sel_Kirilganlik_Gerekcesi",

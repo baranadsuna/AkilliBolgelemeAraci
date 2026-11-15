@@ -1,4 +1,4 @@
-# Urban Zoning and Vulnerability Analysis Tool (v1.9.1)
+# Urban Zoning and Vulnerability Analysis Tool (v1.9.2)
 ### Akıllı Bölgeleme ve Afet Kırılganlık Analiz Aracı
 
 **Mekânsal Planlar Yapım Yönetmeliği (MPYY) Esaslarına Dayalı Çok Kriterli Mekânsal Ward Kümelemesi, 3B Kırılganlık Sentezi ve İmar Planı Karar Destek Sistemi**
@@ -14,6 +14,12 @@
 ## 1. Genel Bakış ve Temel Amaç
 
 Bu eklenti; şehir ve bölge planlama ofisleri, belediyeler, araştırmacılar ve planlama stüdyosu öğrencileri için çalışma alanını morfolojik, işlevsel, yapısal ve afet kırılganlığı göstergelerine göre kompakt ve topolojik açıdan temiz alt planlama bölgelerine (`M1..MK` veya `A1..AK`) ayıran, sıfır sentetik veri prensibiyle çalışan kapsamlı bir karar destek paketidir.
+
+### v1.9.2 ile Gelen Başlıca Yenilikler:
+1. **Pafta Lejant / Sentez Açıklama Metni ve `0_Lejant_Sentez_Metinleri` Çalışma Sayfası:**
+   - Çok sayfalı Excel çıktısının başına eklenen `0_Lejant_Sentez_Metinleri` sayfası ve `1_Hizli_Ozet_Tablosu` içindeki `Pafta Lejant / Sentez Açıklama Metni` sütunu, her alt bölge için arazi kullanım dağılımını, yapı nizamı ve kat yüksekliğini, yapı stoğu durumunu, topoğrafyayı, diri fay ve akarsu yakınlıklarını, sokak dokusu ile MPYY kişi başı aktif donatı erişimini ve planlama müdahale kararını doğal ve okunaklı planlama diliyle bütünleştirir.
+2. **Otomatik Satır Yüksekliği Ayarı ve UIP Nizam Metni Düzeltmesi:**
+   - Excel tablolarında metin sarma sonrası hücrelerin kırpılmasını önleyen satır bazlı dinamik yükseklik hesaplaması eklendi; 1/1000 UİP plan karşılıklarında görülebilen yinelenen `"Nizam Nizam"` ifadesi düzeltildi.
 
 ### v1.9.1 ile Gelen Başlıca Yenilikler:
 1. **QGIS Plugin Hub Django ConfigParser Ayrıştırma Zırhı:**
