@@ -367,6 +367,7 @@
       <li><a href="#zscore">📊 7. Z-Skoru Normalizasyon Matematiği</a></li>
       <li><a href="#ward">🧩 8. Mekânsal Ward Kümelemesi</a></li>
       <li><a href="#xai">🔍 9. Açıklanabilir Yapay Zeka (XAI)</a></li>
+      <li><a href="#strateji-paftasi">🗺️ 12. Strateji Sentez Paftası, GZFT &amp; Baskı Düzeni (v1.9.3)</a></li>
     </ul>
   </nav>
 
@@ -1040,11 +1041,39 @@
       </ul>
     </section>
 
+    <!-- ============================================================ -->
+    <!-- BÖLÜM 12: STRATEJİ SENTEZ PAFTASI, GZFT VE A3/A1 BASKI (v1.9.3) -->
+    <!-- ============================================================ -->
+    <section id="strateji-paftasi">
+      <h2>12. Strateji Sentez Paftası, Veri Tabanlı GZFT/SWOT ve Otomatik A3/A1 Baskı Düzeni (v1.9.3)</h2>
+      <p>
+        <b>v1.9.3</b> ile birlikte eklenti, analiz sonuçlarını doğrudan çok katmanlı bir kentsel-bölgesel strateji sentez paftasına ve yüksek çözünürlüklü <code>QgsPrintLayout</code> çıktısına dönüştürür:
+      </p>
+      <ul>
+        <li>
+          <b>3 Bilgi Dilli Anlamsal Kartografya &amp; Tarama Desenleri (Harrower &amp; Brewer, 2003 — DOI: <a href="https://doi.org/10.1179/000870403235002042" target="_blank" rel="noopener">10.1179/000870403235002042</a>):</b>
+          Sekme 3'teki <b>Kartografik Stil</b> ve <b>Odak Ekseni</b> (<i>Balanced</i> varsayılan) seçimleri ile alt bölgeler tarım, sanayi, sit ve ekoloji için çizgisel/noktasal tarama desenleri, koyu lacivert (<code>#0F172A</code>) strateji sınırları ve çakışmasız çağrı kartlarıyla (<code>QgsBalloonCallout</code>) renklendirilir.
+        </li>
+        <li>
+          <b>Örtmeyen Kırılganlık Taraması &amp; Kritik 'X' Uyarıları (Adger, 2006 — DOI: <a href="https://doi.org/10.1016/j.gloenvcha.2006.02.006" target="_blank" rel="noopener">10.1016/j.gloenvcha.2006.02.006</a>; Turner et al., 2003 — DOI: <a href="https://doi.org/10.1073/pnas.1231335100" target="_blank" rel="noopener">10.1073/pnas.1231335100</a>):</b>
+          <code>Afet_Kirilganlik_Tarama</code> katmanı, alttaki arazi kullanımını kapatmayan kırmızı tarama yoğunlukları kullanır; gerçek eşik ihlallerinde (fay $\le 50\,\text{m}$, taşkın riski $\ge \%25$, $H/W \ge 1.5$, kötü yapı $\ge \%25$) <code>Kritik_Esik_Uyarilari</code> kırmızı `'X'` işaretleri üretilir.
+        </li>
+        <li>
+          <b>Genişletilmiş 14 Analiz Rolü &amp; Ağ Tabanlı Sentez Katmanları:</b>
+          Sekme 2'deki <code>ROLES</code> tablosu <code>dere</code>, <code>sit</code>, <code>fay</code>, <code>risk</code>, <code>tarim</code>, <code>sanayi</code> yanında <code>donati</code>, <code>saglik</code>, <code>toplanma</code>, <code>lst</code> (Isı Adası), <code>ekoloji</code>, <code>ulasim_odak</code>, <code>odak</code> ve <code>genel</code> rollerini tam destekler; tüm roller <code>4_Analiz_Izleme_Matrisi</code> raporunda belgelenir. Seçildiğinde gerçek <code>EPSG:5253</code> metrik 250m/500m/1000m çekim halkaları, $k \ge 2$ çakışma odakları, 150m 4-kademeli odak kümeleri ve gerçek yol ağı MST koridorları <code>Spatial Strategy Synthesis</code> katman grubunda toplanır.
+        </li>
+        <li>
+          <b>Sıfır Halüsinasyonlu GZFT / SWOT ve A3/A1 Pafta Baskısı:</b>
+          Sekme 4 ve Sekme 6 raporlarında, yalnızca ölçülen gerçek metrikleri (<code>[Kod: değer]</code>) aktaran ve eksik verileri <i>Veri Eksikleri</i> bölümünde şeffafça bildiren deterministik GZFT/SWOT sentezi üretilir (Excel'de varsayılan 5-sayfa yapısı korunur, isteğe bağlı <code>include_swot=True</code> ile 6. sayfa <code>5_GZFT_SWOT_Sentezi</code> eklenir). Tek tıkla <b>A3 Yatay</b> veya <b>A1 Dikey</b> pafta PDF / PNG / QPT olarak dışa aktarılır.
+        </li>
+      </ul>
+    </section>
+
   </div>
 
   <footer>
     <div>Dokuz Eylül Üniversitesi, Mimarlık Fakültesi, Şehir ve Bölge Planlama Bölümü</div>
-    <div>Sayısal Planlama &amp; Mekânsal Karar Destek Aracı · v1.9.2</div>
+    <div>Sayısal Planlama &amp; Mekânsal Karar Destek Aracı · v1.9.3</div>
   </footer>
 </div>
 

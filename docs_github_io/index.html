@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AkilliBolgelemeAraci (v1.9.2) - Academic Methodology &amp; Operational Guide</title>
+  <title>AkilliBolgelemeAraci (v1.9.3) - Academic Methodology &amp; Operational Guide</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous" />
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" crossorigin="anonymous"
@@ -85,15 +85,15 @@
 <header>
   <div class="container">
     <div class="badge-row">
-      <span class="badge">Plugin: AkilliBolgelemeAraci v1.9.2</span>
+      <span class="badge">Plugin: AkilliBolgelemeAraci v1.9.3</span>
       <span class="badge crs">Standard CRS: EPSG:5253 (TUREF / TM30)</span>
       <span class="badge qt">QGIS 3.22 – 4.99+ (supportsQt6=True)</span>
       <span class="badge">Flake8 Clean &amp; QGIS Hub Approved</span>
-      <span class="badge">5 Verified Academic DOIs</span>
+      <span class="badge">7 Verified Academic DOIs</span>
     </div>
     <h1>Akıllı Bölgeleme Aracı — Urban Zoning &amp; Vulnerability Analysis Tool</h1>
     <p style="max-width:920px; color:#cbd5e1; margin:0;">
-      Academic methodology and operational guide for spatial contiguity-constrained Ward clustering, advanced boundary compactness, macro-zone area cap exemptions, calibrated residential block population distribution, and 3D disaster vulnerability synthesis.
+      Academic methodology and operational guide for spatial contiguity-constrained Ward clustering, 3-information-language Strategic Synthesis Cartography, non-occluding multi-hazard vulnerability hatching, data-driven GZFT/SWOT synthesis, automated A3/A1 <code>QgsPrintLayout</code> export, and 3D disaster vulnerability analysis.
     </p>
   </div>
 </header>
@@ -133,12 +133,20 @@
 
     <h3>1.3 3D Disaster Vulnerability Framework (<code>analiz.py :: compute_vulnerability</code>)</h3>
     <p>
-      Grounded in the sustainability science framework of <strong>Turner et al. (2003)</strong> (<a href="https://doi.org/10.1073/pnas.1231335100">DOI: 10.1073/pnas.1231335100</a>), seismic and flood vulnerability combine Exposure ($E$), physical Sensitivity ($S$), and Adaptive Capacity ($AC$):
+      Grounded in the sustainability science and vulnerability frameworks of <strong>Turner et al. (2003)</strong> (<a href="https://doi.org/10.1073/pnas.1231335100">DOI: 10.1073/pnas.1231335100</a>) and <strong>Adger (2006)</strong> (<a href="https://doi.org/10.1016/j.gloenvcha.2006.02.006">DOI: 10.1016/j.gloenvcha.2006.02.006</a>), seismic and flood vulnerability combine Exposure ($E$), physical Sensitivity ($S$), and Adaptive Capacity ($AC$):
     </p>
     <div class="math-block">
       $$E = 0.6\,e_{\text{pop\_dens}} + 0.4\,e_{\text{bldg\_count}}, \qquad V_{\text{seismic}} = \frac{E \times S_{\text{seismic}}}{\max(1.0,\, AC_{\text{seismic}})}, \qquad V_{\text{flood}} = \frac{E \times S_{\text{flood}}}{\max(1.0,\, AC_{\text{flood}})}$$
       $$V_{\text{total}} = 0.6\,V_{\text{seismic}} + 0.4\,V_{\text{flood}}$$
     </div>
+
+    <h3>1.4 v1.9.3 Strategic Synthesis Cartography, Multi-Role Matrix, SWOT &amp; A3/A1 Print Layout (<code>pafta_sentez.py</code>)</h3>
+    <ul>
+      <li><strong>3-Information-Language Symbology &amp; Pattern Hatching:</strong> Using perceptually distinct domain color ramps informed by <strong>Harrower &amp; Brewer (2003)</strong> (<a href="https://doi.org/10.1179/000870403235002042">DOI: 10.1179/000870403235002042</a>), <code>apply_synthesis_zone_style</code> separates muted baseline land use, semi-transparent analytical zones, and bold <code>#0F172A</code> strategic borders with diagonal/point pattern hatches (<code>QgsLinePatternFillSymbolLayer</code> / <code>QgsPointPatternFillSymbolLayer</code>) and collision-free <code>QgsBalloonCallout</code> cards across 6 focus axes (default: <code>balanced</code>).</li>
+      <li><strong>Non-Occluding Multi-Hazard Vulnerability Hatching &amp; Critical <code>'X'</code> Markers:</strong> <code>Afet_Kirilganlik_Tarama</code> applies graduated diagonal/cross red hatches so underlying land-use colors stay legible, while <code>Kritik_Esik_Uyarilari</code> flags measured statutory/hazard exceedances ($d_{\text{fault}} \le 50\text{ m}$, flood risk $\ge 25\%$, street canyon $H/W \ge 1.5$, poor building share $\ge 25\%$).</li>
+      <li><strong>Expanded 14-Role Tab 2 Registry &amp; Metric Overlays:</strong> Supports <code>dere</code>, <code>sit</code>, <code>fay</code>, <code>risk</code>, <code>tarim</code>, <code>sanayi</code>, <code>donati</code>, <code>saglik</code>, <code>toplanma</code>, <code>lst</code>, <code>ekoloji</code>, <code>ulasim_odak</code>, <code>odak</code>, and <code>genel</code> cleanly in Z-score clustering and <code>4_Analiz_Izleme_Matrisi</code>, plus optional <code>EPSG:5253</code> 250/500/1000m catchments, $k \ge 2$ overlap hotspots, 150m 4-tier focus clusters, road-network MST corridors, and external transport gateways inside the <code>Spatial Strategy Synthesis</code> layer group.</li>
+      <li><strong>Zero-Hallucination GZFT / SWOT &amp; Automated A3/A1 Print Layout:</strong> <code>build_swot_synthesis</code> emits deterministic threshold-verified findings citing exact <code>[Code: value]</code> evidence and explicitly records missing inputs in <code>data_gaps</code> across Tab 4, Tab 6, opt-in 6th Excel sheet (<code>include_swot=True</code>, preserving the 5-sheet default), and 300 DPI <code>A3 Landscape</code> / <code>A1 Portrait</code> <code>QgsPrintLayout</code> exports (PDF/PNG/QPT).</li>
+    </ul>
   </div>
 
   <h2>2. Six Methodological Invariants (Zero-Distortion Urban Rules)</h2>
@@ -249,6 +257,18 @@
         <td><em>Space syntax</em>, Environment and Planning B: Planning and Design, 3(2), 147–185.</td>
         <td><a href="https://doi.org/10.1068/b030147" target="_blank" rel="noopener">10.1068/b030147</a></td>
         <td>Street-network topology, morphological block framing, and centrality metrics</td>
+      </tr>
+      <tr>
+        <td><strong>Harrower, M. &amp; Brewer, C. A.</strong> (2003)</td>
+        <td><em>ColorBrewer.org: An Online Tool for Selecting Colour Schemes for Maps</em>, The Cartographic Journal, 40(1), 27–37.</td>
+        <td><a href="https://doi.org/10.1179/000870403235002042" target="_blank" rel="noopener">10.1179/000870403235002042</a></td>
+        <td>Perceptual cartographic color hierarchy and thematic map readability (<code>pafta_sentez.py</code>)</td>
+      </tr>
+      <tr>
+        <td><strong>Adger, W. N.</strong> (2006)</td>
+        <td><em>Vulnerability</em>, Global Environmental Change, 16(3), 268–281.</td>
+        <td><a href="https://doi.org/10.1016/j.gloenvcha.2006.02.006" target="_blank" rel="noopener">10.1016/j.gloenvcha.2006.02.006</a></td>
+        <td>Social-ecological vulnerability &amp; adaptive capacity framing for SWOT and hazard hatching</td>
       </tr>
     </tbody>
   </table>

@@ -2,7 +2,10 @@
 import os
 import stat
 import shutil
-from qgis.PyQt.QtWidgets import QAction
+try:
+    from qgis.PyQt.QtGui import QAction
+except ImportError:
+    from qgis.PyQt.QtWidgets import QAction
 from qgis.PyQt.QtGui import QIcon
 from .bolgeleme_dialog import BolgelemeDialog
 

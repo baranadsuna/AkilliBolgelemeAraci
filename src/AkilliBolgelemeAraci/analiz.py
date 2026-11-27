@@ -26,13 +26,20 @@ _QVAR_DOUBLE = getattr(QVariant, "Double", 6)
 _QVAR_STRING = getattr(QVariant, "String", 10)
 
 ROLES = [
-    ("Dere / Akarsu Yatağı (Uzaklık - m)", "dere", "dist"),
-    ("Sit / Koruma Alanı (Alan Oranı - %)", "sit", "share"),
-    ("Diri Fay Hattı (Uzaklık - m)", "fay", "dist"),
-    ("Taşkın / Afet Risk Alanı (Alan Oranı - %)", "risk", "share"),
-    ("Tarım / Mera / Çevre Koruma (Alan Oranı - %)", "tarim", "share"),
-    ("Sanayi / OSB Çevre Kuşağı (Alan Oranı - %)", "sanayi", "share"),
-    ("Diğer Doğal Eşik Katmanı (Otomatik Algıla)", "genel", "auto"),
+    ("Stream / River Corridor (Distance - m)", "dere", "dist"),
+    ("Heritage / Conservation Sit Area (Area Share - %)", "sit", "share"),
+    ("Active Fault Line (Distance - m)", "fay", "dist"),
+    ("Flood / Hazard Risk Area (Area Share - %)", "risk", "share"),
+    ("Agricultural / Pasture / Rural Protection (Area Share - %)", "tarim", "share"),
+    ("Industrial / OIZ Buffer Zone (Area Share - %)", "sanayi", "share"),
+    ("Social / Educational / Park Facility (Count)", "donati", "count"),
+    ("Healthcare Facility (Distance - m)", "saglik", "dist"),
+    ("Emergency Assembly Area (Distance - m)", "toplanma", "dist"),
+    ("Urban Heat Island / LST Layer (Auto-Detect)", "lst", "auto"),
+    ("Ecological / Green-Blue Corridor (Auto-Detect)", "ekoloji", "auto"),
+    ("Transport Hub / Transfer Node (Distance - m)", "ulasim_odak", "dist"),
+    ("Strategic Sectoral Focus / Landmark (Distance - m)", "odak", "dist"),
+    ("Other Spatial Threshold Layer (Auto-Detect)", "genel", "auto"),
 ]
 DIR_NAMES = ["Doğu", "Kuzeydoğu", "Kuzey", "Kuzeybatı", "Batı", "Güneybatı", "Güney", "Güneydoğu"]
 
@@ -1180,9 +1187,10 @@ def _measure_cells_and_zscores(
     ext_kinds = {}
     used_keys = Counter()
     extra_donati_geoms = []
+    role_kind_map = {r[1]: r[2] for r in ROLES}
     for ex in P["extras"]:
-        role = ex["role"]
-        base_kind = {r[1]: r[2] for r in ROLES}[role]
+        role = ex.get("role") or "genel"
+        base_kind = role_kind_map.get(role, "auto")
         geoms = [g for _, g in read_geoms(ex["layer"], work_crs)]
         if not geoms:
             continue
@@ -1424,8 +1432,10 @@ def _measure_cells_and_zscores(
             mult = 1.0
             if k in ("bos_arazi_orani", "doluluk_orani", "taks"):
                 mult *= math.sqrt(max(0.2, w_bos))
-            elif k in ("donati_erisim_m", "erisim_500m_bandi", "lu_donati") or k.startswith("donati"):
+            elif k in ("donati_erisim_m", "erisim_500m_bandi", "lu_donati") or k.startswith(("donati", "saglik", "toplanma", "ulasim_odak")):
                 mult *= math.sqrt(max(0.2, w_erisim))
+            elif k.startswith("odak"):
+                mult *= math.sqrt(max(0.2, w_odak))
             elif k == "yol_gen" or k.startswith("rkap_") or k.startswith("rtur_"):
                 mult *= math.sqrt(max(0.2, w_yol))
             elif k == "lu_mezarlik":
@@ -1838,7 +1848,8 @@ def run_pipeline(P, log, progress):
     _finalize_zone_narratives(zones, P, have, ext_kinds, adj, labels, allcols, mode, connect_isolated=False)
 
     return {"zones": zones, "cells": cells, "labels": labels, "S": S, "have": have, "center": center,
-            "study": study, "work_crs": work_crs, "mode": mode}
+            "study": study, "work_crs": work_crs, "mode": mode,
+            "roads_fg": roads_fg, "P_extras_count": len(P.get("extras") or [])}
 
 
 def run_custom_zones_pipeline(P, zone_layer, code_field="", log=None, progress=None):
@@ -1925,6 +1936,8 @@ def run_custom_zones_pipeline(P, zone_layer, code_field="", log=None, progress=N
         "work_crs": work_crs,
         "mode": mode,
         "is_custom_zones": True,
+        "roads_fg": roads_fg,
+        "P_extras_count": len(P.get("extras") or []),
     }
 
 
@@ -3946,6 +3959,14 @@ def describe_quick_summary(z):
         parts.append(f"Donatı: {int(e['donati'])} adet")
     if z.get("donati_mesafe_m") is not None:
         parts.append(f"Donatı Erişimi ~{z['donati_mesafe_m']:.0f}m")
+    if e.get("saglik") is not None:
+        parts.append(f"Sağlık {e['saglik']:.0f}m")
+    if e.get("toplanma") is not None:
+        parts.append(f"Toplanma {e['toplanma']:.0f}m")
+    if e.get("ulasim_odak") is not None:
+        parts.append(f"Ulaşım Odağı {e['ulasim_odak']:.0f}m")
+    if e.get("odak") is not None:
+        parts.append(f"Odak {e['odak']:.0f}m")
     bos_arazi_pct = int(round((z.get("bos_arazi_orani") if z.get("bos_arazi_orani") is not None else z.get("bos", 0.0)) * 100))
     parts.append(f"Boş Arazi %{bos_arazi_pct}")
     parts.append(f"TAKS %{z['taks'] * 100:.1f}")
@@ -4198,6 +4219,17 @@ def match_feats(zones, have, ext_kinds):
             m["tarim"] = max(m.get("tarim") or 0.0, z["ext"]["tarim"])
         if z["ext"].get("dere") is not None:
             m["dere"] = 1.0 / (1.0 + z["ext"]["dere"] / 150.0)
+        if z["ext"].get("saglik") is not None:
+            m["saglik"] = 1.0 / (1.0 + z["ext"]["saglik"] / 1000.0)
+        if z["ext"].get("toplanma") is not None:
+            m["toplanma"] = 1.0 / (1.0 + z["ext"]["toplanma"] / 600.0)
+        if z["ext"].get("ulasim_odak") is not None:
+            m["ulasim_odak"] = 1.0 / (1.0 + z["ext"]["ulasim_odak"] / 1000.0)
+        if z["ext"].get("odak") is not None:
+            m["odak"] = 1.0 / (1.0 + z["ext"]["odak"] / 1000.0)
+        if z["ext"].get("ekoloji") is not None:
+            ev = float(z["ext"]["ekoloji"])
+            m["ekoloji"] = min(1.0, ev) if ext_kinds.get("ekoloji") == "share" else 1.0 / (1.0 + ev / 500.0)
         if z["bitisik"] is not None:
             m["bitisik"] = z["bitisik"]
         m["bos_arazi"] = z.get("bos_arazi_orani", z.get("bos", 0.5))
@@ -4361,6 +4393,8 @@ CANDIDATE_FIELDS = [
     ("Sosyal_Teknik_Donati_Sayisi", _QVAR_INT),
     ("Toplanma_Alanina_Uzaklik_m", _QVAR_DOUBLE),
     ("Saglik_Tesisine_Uzaklik_m", _QVAR_DOUBLE),
+    ("Ulasim_Odagi_Uzaklik_m", _QVAR_DOUBLE),
+    ("Stratejik_Odak_Uzaklik_m", _QVAR_DOUBLE),
     ("Konut_Kullanim_Orani_Yuzde", _QVAR_DOUBLE),
     ("Ticaret_Kullanim_Orani_Yuzde", _QVAR_DOUBLE),
     ("Sanayi_Depolama_Orani_Yuzde", _QVAR_DOUBLE),
@@ -4476,6 +4510,7 @@ def compute_vulnerability(z):
     donati_n = ext.get("donati")
     toplanma_m = ext.get("toplanma")
     saglik_m = ext.get("saglik")
+    ulasim_m = ext.get("ulasim_odak")
     risk_share = float(ext.get("risk") or 0.0)
     sit_share = float(ext.get("sit") if ext.get("sit") is not None else ((z.get("pay") or {}).get("sit") or ext.get("sit2") or 0.0))
 
@@ -4582,6 +4617,8 @@ def compute_vulnerability(z):
         emerg_terms.append(min(5.0, max(1.0, 5.0 - (float(saglik_m) / 2000.0) * 4.0)))
     if donati_dist is not None:
         emerg_terms.append(min(5.0, max(1.0, 5.0 - (float(donati_dist) / 1200.0) * 4.0)))
+    if ulasim_m is not None:
+        emerg_terms.append(min(5.0, max(1.0, 5.0 - (float(ulasim_m) / 2500.0) * 4.0)))
     if donati_n is not None:
         emerg_terms.append(min(5.0, max(1.0, 1.5 + (float(donati_n) / 4.0) * 3.5)))
     ac_emerg = (sum(emerg_terms) / len(emerg_terms)) if emerg_terms else 2.8
@@ -5090,6 +5127,8 @@ def zone_record(z):
         "Sosyal_Teknik_Donati_Sayisi": int(e["donati"]) if e.get("donati") is not None else None,
         "Toplanma_Alanina_Uzaklik_m": r(e.get("toplanma"), 0),
         "Saglik_Tesisine_Uzaklik_m": r(e.get("saglik"), 0),
+        "Ulasim_Odagi_Uzaklik_m": r(e.get("ulasim_odak"), 0),
+        "Stratejik_Odak_Uzaklik_m": r(e.get("odak"), 0),
         "Konut_Kullanim_Orani_Yuzde": pc("konut"),
         "Ticaret_Kullanim_Orani_Yuzde": pc("ticaret"),
         "Sanayi_Depolama_Orani_Yuzde": pc("sanayi"),
@@ -5226,7 +5265,21 @@ def make_cell_layer(res):
     return lyr
 
 
-def style_zone_layer(layer):
+def style_zone_layer(layer, zones=None, semantic_mode=False, focus_axis="balanced", use_callouts=False):
+    if semantic_mode:
+        try:
+            from . import pafta_sentez
+            pafta_sentez.apply_synthesis_zone_style(
+                layer,
+                zones=zones,
+                focus_axis=focus_axis,
+                semantic_mode=True,
+                use_callouts=use_callouts,
+            )
+            return
+        except Exception as exc:
+            import warnings
+            warnings.warn(f"Synthesis zone styling fallback to classic HSV: {exc}", RuntimeWarning)
     cats = []
     feats = list(layer.getFeatures())
     for i, f in enumerate(feats):
@@ -5325,7 +5378,7 @@ def export_analysis_tracking_matrix(P, zones=None, target_path=None):
     for ext in P.get("extras", []):
         lyr = ext.get("layer")
         nm = ext.get("name", "Doğal Eşik")
-        role = ext.get("role", "diger")
+        role = ext.get("role", "genel")
         if role == "dere":
             add_row(nm, lyr, "Spatial Index Euclidean Mesafe", "Hidrolojik Eşik & Sel Kırılganlığı",
                     "Doğal Yeşil Koridor, Taşkın Kuşağı, Çekme Mesafesi", "Kullanıldı",
@@ -5342,8 +5395,36 @@ def export_analysis_tracking_matrix(P, zones=None, target_path=None):
             add_row(nm, lyr, "Poligon Kesişim & Risk Maskesi", "Taşkın/Afet Risk Maruziyeti",
                     "Yapı Yasağı, Taşkın Koruma Bendi, Ekolojik Alan", "Kullanıldı",
                     "Afet ve taşkın risk poligonları çok kriterli kümelemeye girdi.")
+        elif role == "tarim":
+            add_row(nm, lyr, "Poligon Alan Kesişim Payı", "Tarımsal Toprak & Kırsal Çeper Koruması",
+                    "Tarım Bütünlüğü Koruma, Saçaklanma Önleme", "Kullanıldı",
+                    "Tarım, mera ve ova alanlarının payı ölçülerek kentsel gelişme sınırı ayrıştırıldı.")
+        elif role == "sanayi":
+            add_row(nm, lyr, "Poligon Alan Kesişim Payı", "Sanayi / OSB Bütünlüğü & Çevresel Tampon",
+                    "OSB Bütünlüğü, Konut-Sanayi Tampon Kuşağı", "Kullanıldı",
+                    "Sanayi ve üretim alanları ölçülerek hassas kullanımlarla arayüz bölgeleri ayrıldı.")
+        elif role == "ekoloji":
+            add_row(nm, lyr, "Mekânsal Kesişim / Mesafe Analizi", "Ekolojik Sistem & Yeşil-Mavi Ağ Bağlantısı",
+                    "Ekolojik Koridor Koruma & Açık Alan Sürekliliği", "Kullanıldı",
+                    "Doğal/ekolojik koridor ve korunan habitat dokusu çok kriterli senteze dahil edildi.")
+        elif role == "ulasim_odak":
+            add_row(nm, lyr, "Spatial Index Euclidean / Ağ Mesafe Analizi", "Ulaşım Odağı & Aktarma Erişilebilirliği",
+                    "Bölgesel Erişim Omurgası, Toplu Taşıma & Tahliye", "Kullanıldı",
+                    "Ulaşım odaklarına mesafe ölçülerek erişilebilirlik ve uyum kapasitesi hesaplandı.")
+        elif role == "odak":
+            add_row(nm, lyr, "Mekânsal Yakınlık & Kademeli Odak Analizi", "Stratejik Sektörel Odak & Çekim Alanı",
+                    "Odak Kademelenmesi, Çekim Halkaları ve Koridor Bağlantısı", "Kullanıldı",
+                    "Stratejik odak noktalarına yakınlık ve kümeleme kademeleri sentez matrisine girdi.")
+        elif role == "saglik":
+            add_row(nm, lyr, "Spatial Index Euclidean Mesafe", "Sağlık Tesisi Erişilebilirliği & Acil Müdahale (AC)",
+                    "Sağlık Hizmet Alanı Dengesi & Afet Uyum Kapasitesi", "Kullanıldı",
+                    "Sağlık tesislerine uzaklık ölçülerek MPYY erişim ve AC kapasitesine eklendi.")
+        elif role == "toplanma":
+            add_row(nm, lyr, "Spatial Index Euclidean Mesafe", "Acil Toplanma Alanı Erişimi & Tahliye (AC)",
+                    "Afet Sonrası Barınma / Toplanma Yeterliliği", "Kullanıldı",
+                    "Toplanma alanlarına yürüme/erişim mesafesi deprem uyum kapasitesine dahil edildi.")
         elif role == "donati":
-            add_row(nm, lyr, "Mekânsal Kümeleme & Nokta Sayımı", "Sosyal Donatı Yeterliliği / 2SFCA",
+            add_row(nm, lyr, "Mekânsal Kümeleme & Nokta Sayımı", "Sosyal Donatı Yeterliliği / MPYY Erişimi",
                     "Eğitim, Sağlık ve Sosyal Tesis Tahsisi", "Kullanıldı",
                     "Adalar içerisindeki donatı sayısı ve erişim düzeyi modellendi.")
         elif role in ("syntax", "nain", "nach"):
@@ -5359,16 +5440,48 @@ def export_analysis_tracking_matrix(P, zones=None, target_path=None):
                     "Genel İmar ve Müdahale Kararı", "Kullanıldı",
                     "Çalışma alanındaki mekânsal dağılım modele dahil edildi.")
 
+    for meta in (P.get("synthesis_layers_meta") or []):
+        if isinstance(meta, dict):
+            m_name = meta.get("name") or meta.get("layer_name") or meta.get("key") or "Synthesis Overlay"
+            m_lyr = meta.get("layer")
+            m_method = meta.get("method") or "Strategic Synthesis Cartographic Overlay"
+            m_role = meta.get("role") or "Strategy Plate & Spatial Decision Layer"
+            m_int = meta.get("intervention") or meta.get("decision") or "Strategic Synthesis Plate & Overlay Guidance"
+            m_status = meta.get("status") or ("Kullanıldı" if m_lyr is not None else "Atlandı")
+            m_cnt = meta.get("feature_count") if meta.get("feature_count") is not None else meta.get("count")
+            m_just = meta.get("justification") or meta.get("reason") or meta.get("note") or ""
+            if not m_just and m_cnt is not None:
+                m_just = f"Derived synthesis overlay feature count: {m_cnt}."
+            add_row(
+                m_name, m_lyr, m_method, m_role, m_int, m_status,
+                m_just or "Generated synthesis overlay tracked under No Orphan Analysis.",
+            )
+            if m_lyr is None and m_cnt is not None and rows:
+                rows[-1]["Detay_Sayisi"] = int(m_cnt)
+        elif isinstance(meta, str) and meta.strip():
+            add_row(
+                meta.strip(), None, "Strategic Synthesis Cartographic Overlay",
+                "Strategy Plate & Spatial Decision Layer", "Strategic Synthesis Plate",
+                "Kullanıldı", meta.strip(),
+            )
+
     used_ids = {lyr.id() for lyr in [bnd, road, blk, bldg, dem] if lyr is not None}
     for ext in P.get("extras", []):
         if ext.get("layer") is not None:
             used_ids.add(ext["layer"].id())
 
+    _skip_overlay_prefixes = (
+        "alt_bolge", "hazir_bolge", "hucre", "imar_adasi_hucre",
+        "calisma_alani_maske", "afet_kirilganlik_tarama", "kritik_esik_uyari",
+        "odak_cekim", "odak_kademe", "stratejik_koridor", "dis_ulasim_aks",
+        "scratch", "temp"
+    )
     proj_layers = list(QgsProject.instance().mapLayers().values())
     for lyr in proj_layers:
         if lyr.id() not in used_ids:
             nm = lyr.name()
-            if any(x in nm.lower() for x in ("alt_bolge", "hucre", "imar_adasi_hucre", "scratch", "temp")):
+            nm_norm = alg.norm_tr(nm)
+            if any(x in nm_norm for x in _skip_overlay_prefixes):
                 continue
             add_row(nm, lyr, "Mekânsal Tarama", "Dışlama / Referans Altlık",
                     "Doğrudan Müdahale Üretmedi", "Dışlandı",
@@ -5424,6 +5537,8 @@ FRIENDLY_COL_HEADERS = {
     "Sosyal_Teknik_Donati_Sayisi": "Donatı Sayısı (Adet)",
     "Toplanma_Alanina_Uzaklik_m": "Toplanma Alanına Uzaklık (m)",
     "Saglik_Tesisine_Uzaklik_m": "Sağlık Tesisine Uzaklık (m)",
+    "Ulasim_Odagi_Uzaklik_m": "Ulaşım Odağına Uzaklık (m)",
+    "Stratejik_Odak_Uzaklik_m": "Stratejik Odağa Uzaklık (m)",
     "Konut_Kullanim_Orani_Yuzde": "Konut Oranı (%)",
     "Ticaret_Kullanim_Orani_Yuzde": "Ticaret Oranı (%)",
     "Sanayi_Depolama_Orani_Yuzde": "Sanayi Oranı (%)",
@@ -5454,7 +5569,7 @@ FRIENDLY_COL_HEADERS = {
 }
 
 
-def export_excel_workbook(target_path, records, quick_records=None, P=None, zones=None, is_matrix_only=False):
+def export_excel_workbook(target_path, records, quick_records=None, P=None, zones=None, is_matrix_only=False, include_swot=False):
     """
     Okunabilirliği yüksek, renkli başlıklı, satır kaydırmalı (word-wrap), sütun genişlikleri
     otomatik ayarlanmış çok sayfalı (.xlsx) Excel çalışma kitabı üretir.
@@ -5655,6 +5770,48 @@ def export_excel_workbook(target_path, records, quick_records=None, P=None, zone
         if matrix_rows:
             ws4 = wb.create_sheet(title="4_Analiz_Izleme_Matrisi")
             _populate_sheet(ws4, matrix_rows, freeze_cell="C2")
+
+    # Sayfa 5 (İsteğe Bağlı Opt-In): GZFT / SWOT Sentezi
+    if include_swot and zones:
+        try:
+            from . import pafta_sentez
+            swot_lang = (P or {}).get("lang", "en") if isinstance(P, dict) else "en"
+            swot = pafta_sentez.build_swot_synthesis(zones, P=P, lang=swot_lang)
+            swot_rows = []
+            sec_map = [
+                ("Strengths / Güçlü Yönler", swot.get("strengths") or []),
+                ("Weaknesses / Zayıf Yönler", swot.get("weaknesses") or []),
+                ("Opportunities / Fırsatlar", swot.get("opportunities") or []),
+                ("Threats / Tehditler", swot.get("threats") or []),
+                ("Data Gaps / Veri Eksikleri", swot.get("data_gaps") or []),
+            ]
+            for dim_label, items in sec_map:
+                if not items:
+                    continue
+                for idx_it, it in enumerate(items, 1):
+                    txt_it = it.get("text", str(it)) if isinstance(it, dict) else str(it)
+                    swot_rows.append({
+                        "SWOT_Dimension": dim_label,
+                        "Item_No": idx_it,
+                        "Measured_Finding_and_Evidence": txt_it,
+                    })
+            if swot_rows:
+                ws5 = wb.create_sheet(title="5_GZFT_SWOT_Sentezi")
+                _populate_sheet(
+                    ws5,
+                    swot_rows,
+                    col_keys=["SWOT_Dimension", "Item_No", "Measured_Finding_and_Evidence"],
+                    freeze_cell="B2",
+                    header_overrides={
+                        "SWOT_Dimension": "GZFT / SWOT Dimension",
+                        "Item_No": "#",
+                        "Measured_Finding_and_Evidence": "Data-Driven Finding & Measured Evidence",
+                    },
+                    width_overrides={"SWOT_Dimension": 30, "Item_No": 8, "Measured_Finding_and_Evidence": 96},
+                )
+        except Exception as exc:
+            import warnings
+            warnings.warn(f"SWOT synthesis Excel sheet skipped: {exc}", RuntimeWarning)
 
     wb.save(target_path)
     return target_path

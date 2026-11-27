@@ -1,4 +1,4 @@
-# Urban Zoning and Vulnerability Analysis Tool (v1.9.2)
+# Urban Zoning and Vulnerability Analysis Tool (v1.9.3)
 ### Akıllı Bölgeleme ve Afet Kırılganlık Analiz Aracı
 
 **Mekânsal Planlar Yapım Yönetmeliği (MPYY) Esaslarına Dayalı Çok Kriterli Mekânsal Ward Kümelemesi, 3B Kırılganlık Sentezi ve İmar Planı Karar Destek Sistemi**
@@ -14,6 +14,15 @@
 ## 1. Genel Bakış ve Temel Amaç
 
 Bu eklenti; şehir ve bölge planlama ofisleri, belediyeler, araştırmacılar ve planlama stüdyosu öğrencileri için çalışma alanını morfolojik, işlevsel, yapısal ve afet kırılganlığı göstergelerine göre kompakt ve topolojik açıdan temiz alt planlama bölgelerine (`M1..MK` veya `A1..AK`) ayıran, sıfır sentetik veri prensibiyle çalışan kapsamlı bir karar destek paketidir.
+
+### v1.9.3 ile Gelen Başlıca Yenilikler:
+1. **Stratejik Sentez Paftası, Çok Katmanlı Kartografya ve Baskı Düzeni (`pafta_sentez.py`):**
+   - **3 Bilgi Dilli Anlamsal Stil & Tarama Desenleri:** Alanlar `Balanced` varsayılanlı 6 odak ekseninde (`SYNTHESIS_FOCUS_AXES`) tarım, sanayi, sit ve ekoloji için çizgisel/noktasal tarama desenleri (`QgsLinePatternFillSymbolLayer` / `QgsPointPatternFillSymbolLayer`), kalın `#0F172A` strateji sınırları ve çakışmasız çağrı kutucuklarıyla (`QgsBalloonCallout`) sembolize edilir.
+   - **Örtmeyen Afet Kırılganlığı & Kritik `'X'` Uyarıları:** Ana doku dolgularını kapatmayan yarı saydam kırmızı diyagonal/çapraz kırılganlık tarama katmanı (`Afet_Kirilganlik_Tarama`) ve ölçülen yasal/tehlike eşiklerini aşan bölgelerde kırmızı `'X'` uyarı noktaları (`Kritik_Esik_Uyarilari`) üretilir.
+   - **Çoklu Çekim Halkaları, Odak Kademeleri ve Ağ Tabanlı Koridorlar:** Gerçek kullanıcı katmanlarından `EPSG:5253` metrik 250m/500m/1000m çekim alanları, $k \ge 2$ çakışma sıcak noktaları, 150m 4-kademeli odak kümeleri, gerçek yol ağı (`road_layer`) en kısa yol MST koridorları ve dış ulaşım okları oluşturulur; `Spatial Strategy Synthesis` katman grubuna eklenir.
+   - **Otomatik A3 Yatay / A1 Dikey Baskı Düzeni (`QgsPrintLayout`):** Tek tıkla ana harita, analitik detay inset haritası, kategorize lejant, metrik ölçek çubuğu, kuzey oku (`north_arrow.svg`), künye, veri tabanlı GZFT/SWOT ve 1-1 eşleşmeli bölge özet tablosuyla PDF/PNG/QPT çıktısı alınır.
+2. **Veriye Dayalı Sıfır-Halüsinasyonlu GZFT / SWOT ve 14 Aktif Rol (`ROLES`):**
+   - Tab 2 doğrulama motorundaki `KeyError` ve `lst -> dere` yönlendirme hataları giderilerek `donati`, `saglik`, `toplanma`, `lst`, `ekoloji`, `ulasim_odak`, `odak` rolleri etkinleştirildi ve `4_Analiz_Izleme_Matrisi` kapsamına alındı; `export_excel_workbook(..., include_swot=True)` ile isteğe bağlı `5_GZFT_SWOT_Sentezi` sayfası eklendi (varsayılan 5-sayfa yapısı korunur).
 
 ### v1.9.2 ile Gelen Başlıca Yenilikler:
 1. **Pafta Lejant / Sentez Açıklama Metni ve `0_Lejant_Sentez_Metinleri` Çalışma Sayfası:**
@@ -92,7 +101,7 @@ $$V = \frac{E \cdot S}{AC}$$
 
 ## 4. Doğrulanmış Akademik Kaynaklar ve Literatür Dayanağı
 
-Tüm algoritmik metodoloji Crossref ve DOI.org üzerinden doğrulanmış 5 temel akademik yayına dayanmaktadır:
+Tüm algoritmik metodoloji Crossref ve DOI.org üzerinden doğrulanmış 7 temel akademik yayına dayanmaktadır:
 
 1. **J. H. Ward Jr.** (1963). *Hierarchical Grouping to Optimize an Objective Function*. Journal of the American Statistical Association, 58(301), 236–244.  
    DOI: [`10.1080/01621459.1963.10500845`](https://doi.org/10.1080/01621459.1963.10500845)
@@ -104,6 +113,10 @@ Tüm algoritmik metodoloji Crossref ve DOI.org üzerinden doğrulanmış 5 temel
    DOI: [`10.1068/b29120`](https://doi.org/10.1068/b29120)
 5. **B. Hillier et al.** (1976). *Space Syntax*. Environment and Planning B: Planning and Design, 3(2), 147–185.  
    DOI: [`10.1068/b030147`](https://doi.org/10.1068/b030147)
+6. **M. Harrower & C. A. Brewer** (2003). *ColorBrewer.org: An Online Tool for Selecting Colour Schemes for Maps*. The Cartographic Journal, 40(1), 27–37.  
+   DOI: [`10.1179/000870403235002042`](https://doi.org/10.1179/000870403235002042)
+7. **W. N. Adger** (2006). *Vulnerability*. Global Environmental Change, 16(3), 268–281.  
+   DOI: [`10.1016/j.gloenvcha.2006.02.006`](https://doi.org/10.1016/j.gloenvcha.2006.02.006)
 
 ---
 

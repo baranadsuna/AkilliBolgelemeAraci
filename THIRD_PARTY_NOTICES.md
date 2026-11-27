@@ -1,6 +1,6 @@
 # Third-Party Conceptual Attributions & Notices
 
-This plugin (**Akıllı Bölgeleme ve Kırılganlık Analiz Aracı / Smart Zoning & Vulnerability Analyzer**, `v1.9.2`) is authored and maintained cleanly by **Baran Adsuna** (Dokuz Eylül University, Department of Urban and Regional Planning) under the **GNU General Public License v3.0 (GPL-3.0)**.
+This plugin (**Akıllı Bölgeleme ve Kırılganlık Analiz Aracı / Smart Zoning & Vulnerability Analyzer**, `v1.9.3`) is authored and maintained cleanly by **Baran Adsuna** (Dokuz Eylül University, Department of Urban and Regional Planning) under the **GNU General Public License v3.0 (GPL-3.0)**.
 
 ---
 

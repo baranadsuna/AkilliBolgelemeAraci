@@ -21,6 +21,19 @@ from qgis.core import (
 
 from . import analiz
 from . import algoritma as alg
+try:
+    from . import pafta_sentez
+except ImportError:
+    pafta_sentez = None
+
+_FALLBACK_FOCUS_AXES = [
+    ("balanced", "Balanced Multi-Criteria (Default)", "Dengeli Çok Kriterli (Varsayılan)", "多准则均衡 (默认)", "Multicriterio Equilibrado (Predeterminado)"),
+    ("resilience", "Disaster Resilience & Safety", "Afet Dirençliliği ve Güvenlik", "防灾韧性与安全", "Resiliencia y Seguridad ante Desastres"),
+    ("ecology", "Ecological & Heritage Conservation", "Ekolojik ve Miras Koruma", "生态与遗产保护", "Conservación Ecológica y Patrimonial"),
+    ("facility", "Facility & Service Accessibility", "Donatı ve Hizmet Erişilebilirliği", "设施与服务可达性", "Accesibilidad a Equipamientos"),
+    ("tourism_culture", "Tourism, Culture & Corridor Focus", "Turizm, Kültür ve Koridor Odağı", "旅游文化与廊道聚焦", "Turismo, Cultura y Corredores"),
+    ("production", "Agriculture, Industry & Logistics", "Tarım, Sanayi ve Lojistik", "农业产业与物流", "Agricultura, Industria y Logística"),
+]
 
 # PyQt5 / PyQt6 uyumluluk köprüsü
 ScrollBarAsNeeded = getattr(Qt.ScrollBarPolicy, "ScrollBarAsNeeded", getattr(Qt, "ScrollBarAsNeeded", None))
@@ -41,6 +54,18 @@ HeaderStretch = getattr(_ResizeMode, "Stretch", getattr(QHeaderView, "Stretch", 
 
 _SelectionBehavior = getattr(QAbstractItemView, "SelectionBehavior", QAbstractItemView)
 SelectRows = getattr(_SelectionBehavior, "SelectRows", getattr(QAbstractItemView, "SelectRows", 1))
+
+_SizeAdjustPolicy = getattr(QComboBox, "SizeAdjustPolicy", QComboBox)
+ComboAdjustMinContents = getattr(
+    _SizeAdjustPolicy,
+    "AdjustToMinimumContentsLengthWithIcon",
+    getattr(QComboBox, "AdjustToMinimumContentsLengthWithIcon", None),
+)
+
+
+def _escape_qt_amp(text):
+    """Escape single '&' mnemonics for non-HTML Qt interactive controls without double-escaping '&&'."""
+    return str(text).replace("&&", "\x00").replace("&", "&&").replace("\x00", "&&")
 
 STYLE = """
 QDialog {
@@ -108,10 +133,10 @@ QTabBar::tab {
     border-bottom: none;
     border-top-left-radius: 6px;
     border-top-right-radius: 6px;
-    padding: 8px 14px;
-    margin-right: 4px;
+    padding: 7px 10px;
+    margin-right: 3px;
     font-weight: 600;
-    font-size: 12px;
+    font-size: 11px;
 }
 QTabBar::tab:selected {
     background-color: #0284c7;
@@ -129,7 +154,7 @@ QPushButton {
     border: 1px solid #94a3b8;
     border-bottom: 2px solid #64748b;
     border-radius: 6px;
-    padding: 6px 14px;
+    padding: 5px 10px;
     font-weight: 600;
     font-size: 12px;
     min-height: 22px;
@@ -143,8 +168,8 @@ QPushButton:hover {
 QPushButton:pressed {
     background-color: #cbd5e1;
     border: 1px solid #64748b;
-    padding-top: 8px;
-    padding-bottom: 4px;
+    padding-top: 7px;
+    padding-bottom: 3px;
 }
 /* Ana Çalıştır Düğmesi (Zümrüt Yeşili 3D) */
 QPushButton#runBtn {
@@ -153,9 +178,9 @@ QPushButton#runBtn {
     border-bottom: 3px solid #14532d;
     border-radius: 7px;
     color: #ffffff;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: bold;
-    padding: 7px 20px;
+    padding: 6px 14px;
     min-height: 24px;
 }
 QPushButton#runBtn:hover {
@@ -166,8 +191,8 @@ QPushButton#runBtn:hover {
 QPushButton#runBtn:pressed {
     background-color: #15803d;
     border-bottom: 1px solid #14532d;
-    padding-top: 9px;
-    padding-bottom: 5px;
+    padding-top: 8px;
+    padding-bottom: 4px;
 }
 QPushButton#runBtn:disabled {
     background-color: #94a3b8;
@@ -183,7 +208,7 @@ QPushButton#exportBtn {
     color: #ffffff;
     font-size: 12px;
     font-weight: bold;
-    padding: 7px 16px;
+    padding: 6px 11px;
     min-height: 24px;
 }
 QPushButton#exportBtn:hover {
@@ -192,8 +217,8 @@ QPushButton#exportBtn:hover {
 QPushButton#exportBtn:pressed {
     background-color: #075985;
     border-bottom: 1px solid #0c4a6e;
-    padding-top: 9px;
-    padding-bottom: 5px;
+    padding-top: 8px;
+    padding-bottom: 4px;
 }
 QPushButton#exportBtn:disabled {
     background-color: #e2e8f0;
@@ -209,7 +234,7 @@ QPushButton#matrixBtn {
     color: #ffffff;
     font-weight: 700;
     font-size: 12px;
-    padding: 8px 16px;
+    padding: 6px 12px;
     min-height: 24px;
 }
 QPushButton#matrixBtn:hover {
@@ -349,14 +374,119 @@ ROAD_FIELD_DEFS = [
 ]
 
 NATURAL_LAYER_RULES = [
-    ("dere", "Dere / Akarsu Yatağı", ("dere", "akarsu", "nehir", "cay", "su_yolu", "kanal", "vadisi", "hidroloji")),
-    ("fay", "Diri Fay Hattı", ("diri_fay", "fay_hatti", "faylar", "fault", "seismic_fault", "aktif_fay", "fay_")),
-    ("sit", "Sit / Koruma Alanı", ("sit_alan", "tescilli_alan", "kentsel_sit", "dogal_sit", "arkeolojik_sit", "sit", "tescil", "koruma")),
-    ("risk", "Taşkın / Afet Risk Alanı", ("taskin", "sel_riski", "heyelan", "afete_maruz", "sakincali", "jeoloji")),
-    ("lst", "Kentsel Isı Adası / LST", ("lst", "isi_adasi", "thermal", "sicaklik", "termal", "heat")),
-    ("tarim", "Tarım / Ova Alanı", ("tarim", "ova", "buyukova", "mera", "ziraat")),
-    ("sanayi", "Sanayi / OSB Çevre Kuşağı", ("sanayi", "osb", "endustri", "depolama", "kss")),
+    ("dere", "Stream / River Corridor", ("dere", "akarsu", "nehir", "cay", "su_yolu", "kanal", "vadisi", "hidroloji", "stream", "river")),
+    ("fay", "Active Fault Line", ("diri_fay", "fay_hatti", "faylar", "fault", "seismic_fault", "aktif_fay", "fay_")),
+    ("sit", "Heritage / Sit Conservation Area", ("sit_alan", "tescilli_alan", "kentsel_sit", "dogal_sit", "arkeolojik_sit", "sit", "tescil", "koruma", "heritage")),
+    ("risk", "Flood / Hazard Risk Area", ("taskin", "sel_riski", "heyelan", "afete_maruz", "sakincali", "jeoloji", "flood", "landslide", "hazard")),
+    ("lst", "Urban Heat Island / LST", ("lst", "isi_adasi", "thermal", "sicaklik", "termal", "heat")),
+    ("ekoloji", "Ecological / Green-Blue Corridor", ("ekoloji", "ekolojik", "ecology", "orman", "forest", "sulak", "wetland", "jeopark", "geopark", "havza", "korunan", "biyo")),
+    ("tarim", "Agricultural / Rural Fringe", ("tarim", "ova", "buyukova", "mera", "ziraat", "zeytin", "agri", "orchard")),
+    ("sanayi", "Industrial / OIZ Buffer", ("sanayi", "osb", "endustri", "depolama", "kss", "industrial", "maden", "mining", "enerji", "energy")),
+    ("saglik", "Healthcare Facility", ("saglik", "hastane", "asm", "poliklinik", "health", "hospital", "clinic")),
+    ("toplanma", "Emergency Assembly Area", ("toplanma", "acil_toplanma", "assembly", "shelter", "barinma")),
+    ("donati", "Social / Educational / Park Facility", ("donati", "okul", "egitim", "park", "yesil_alan", "kampus", "universite", "school", "campus", "facility")),
+    ("ulasim_odak", "Transport Hub / Transfer Node", ("ulasim_odak", "otogar", "gar", "istasyon", "havalimani", "liman", "aktarma", "station", "airport", "terminal", "hub")),
+    ("odak", "Strategic Focus / Landmark", ("odak", "turizm", "kultur", "landmark", "focal", "tourism", "attraction")),
 ]
+
+ROLE_LABELS_I18N = {
+    "dere": {
+        "en": "Stream / River Corridor (Distance - m)",
+        "tr": "Dere / Akarsu Yatağı (Uzaklık - m)",
+        "zh": "河道 / 溪流廊道 (距离 - m)",
+        "es": "Arroyo / Corredor Fluvial (Distancia - m)",
+    },
+    "sit": {
+        "en": "Heritage / Conservation Sit Area (Area Share - %)",
+        "tr": "Sit / Koruma Alanı (Alan Oranı - %)",
+        "zh": "历史遗产 / 保护区 (面积占比 - %)",
+        "es": "Patrimonio / Área Protegida (Porcentaje - %)",
+    },
+    "fay": {
+        "en": "Active Fault Line (Distance - m)",
+        "tr": "Diri Fay Hattı (Uzaklık - m)",
+        "zh": "活动断层线 (距离 - m)",
+        "es": "Falla Activa (Distancia - m)",
+    },
+    "risk": {
+        "en": "Flood / Hazard Risk Area (Area Share - %)",
+        "tr": "Taşkın / Afet Risk Alanı (Alan Oranı - %)",
+        "zh": "洪水 / 灾害风险区 (面积占比 - %)",
+        "es": "Área de Riesgo / Inundación (Porcentaje - %)",
+    },
+    "tarim": {
+        "en": "Agricultural / Pasture / Rural Protection (Area Share - %)",
+        "tr": "Tarım / Mera / Çevre Koruma (Alan Oranı - %)",
+        "zh": "农田 / 牧场与乡村保护区 (面积占比 - %)",
+        "es": "Agrícola / Pastizal / Protección Rural (Porcentaje - %)",
+    },
+    "sanayi": {
+        "en": "Industrial / OIZ Buffer Zone (Area Share - %)",
+        "tr": "Sanayi / OSB Çevre Kuşağı (Alan Oranı - %)",
+        "zh": "工业 / 产业园缓冲带 (面积占比 - %)",
+        "es": "Zona Industrial / Amortiguamiento (Porcentaje - %)",
+    },
+    "donati": {
+        "en": "Social / Educational / Park Facility (Count)",
+        "tr": "Sosyal / Eğitim / Park Donatısı (Adet)",
+        "zh": "公共 / 教育 / 公园设施 (数量)",
+        "es": "Equipamiento Social / Educativo / Parque (Conteo)",
+    },
+    "saglik": {
+        "en": "Healthcare Facility (Distance - m)",
+        "tr": "Sağlık Tesisi (Uzaklık - m)",
+        "zh": "医疗卫生设施 (距离 - m)",
+        "es": "Centro de Salud (Distancia - m)",
+    },
+    "toplanma": {
+        "en": "Emergency Assembly Area (Distance - m)",
+        "tr": "Acil Toplanma Alanı (Uzaklık - m)",
+        "zh": "应急避难集合区 (距离 - m)",
+        "es": "Área de Reunión de Emergencia (Distancia - m)",
+    },
+    "lst": {
+        "en": "Urban Heat Island / LST Layer (Auto-Detect)",
+        "tr": "Kentsel Isı Adası / LST Katmanı (Otomatik)",
+        "zh": "城市热岛 / 地表温度 LST (自动检测)",
+        "es": "Isla de Calor Urbana / LST (Autodetección)",
+    },
+    "ekoloji": {
+        "en": "Ecological / Green-Blue Corridor (Auto-Detect)",
+        "tr": "Ekolojik / Yeşil-Mavi Koridor (Otomatik)",
+        "zh": "生态 / 蓝绿廊道 (自动检测)",
+        "es": "Corredor Ecológico / Verde-Azul (Autodetección)",
+    },
+    "ulasim_odak": {
+        "en": "Transport Hub / Transfer Node (Distance - m)",
+        "tr": "Ulaşım Odağı / Aktarma Merkezi (Uzaklık - m)",
+        "zh": "交通枢纽 / 换乘节点 (距离 - m)",
+        "es": "Nodo de Transporte / Transferencia (Distancia - m)",
+    },
+    "odak": {
+        "en": "Strategic Sectoral Focus / Landmark (Distance - m)",
+        "tr": "Stratejik Sektörel Odak / Çekim Noktası (Uzaklık - m)",
+        "zh": "战略焦点 / 地标节点 (距离 - m)",
+        "es": "Foco Estratégico / Hito Sectorial (Distancia - m)",
+    },
+    "genel": {
+        "en": "Other Spatial Threshold Layer (Auto-Detect)",
+        "tr": "Diğer Doğal Eşik Katmanı (Otomatik Algıla)",
+        "zh": "其他空间阈值图层 (自动检测)",
+        "es": "Otra Capa de Umbral Espacial (Autodetección)",
+    },
+}
+
+ROLE_SHORT_I18N = {
+    code: {lg: lbl.split(" (")[0] for lg, lbl in langs.items()}
+    for code, langs in ROLE_LABELS_I18N.items()
+}
+
+_DERIVED_LAYER_PATTERNS = (
+    "alt_bolge", "hazir_bolge", "hucre", "imar_adasi_hucre",
+    "calisma_alani_maske", "afet_kirilganlik_tarama", "kritik_esik_uyari",
+    "odak_cekim", "odak_kademe", "stratejik_koridor", "dis_ulasim_aks",
+    "scratch", "temp",
+)
 
 
 def wrap_in_scroll(widget):
@@ -430,15 +560,15 @@ UI_TRANSLATIONS = {
         "mode_adv": "🔬 Advanced Synthesis & Intervention Atlas Mode (Vulnerability [E/S/AC], Elevation, Decisions & Plan Map)",
         "badge_adv": "🔬 <b>Advanced Synthesis & Intervention Atlas Active:</b> Generates M1..MK sequential codes, 3D Vulnerability (E·S/AC), DEM Elevation (Z), Intervention Decisions, 1/5000 & 1/1000 Plan Rules, and Tracking Matrix.",
         "badge_std": "🌱 <b>Standard Zoning Mode Active:</b> Generates A1..AK sequential morphological profile matching, fabric homogeneity, and boundary separation rationales.",
-        "btn_help": "📖 Methodology & User Guide (HTML)",
+        "btn_help": "📖 Methodology && Guide (HTML)",
         "btn_top_adv": "▶ Run Synthesis",
         "btn_top_std": "▶ Run Standard",
-        "tab_1": "1. Layers, Buildings & Pop.",
-        "tab_2": "2. Natural Thresholds & DEM",
-        "tab_3": "3. Weights & Settings",
-        "tab_4": "4. Boundary Rationales Report",
-        "tab_5": "5. Methodology & MPYY Guide",
-        "tab_6": "6. Provided Zone Analyzer",
+        "tab_1": "1. Layers && Pop.",
+        "tab_2": "2. Thresholds && DEM",
+        "tab_3": "3. Weights && Style",
+        "tab_4": "4. Synthesis Report",
+        "tab_5": "5. Methodology",
+        "tab_6": "6. Custom Zones",
         "grp_cz": "K. Analyze User-Provided Pre-Drawn Zones (Zero Boundary Modification)",
         "lbl_cz_info": (
             "⚡ <b>Independent Existing-Zone Analyzer:</b> Keep your existing situation data (blocks/land use, buildings, roads, population, hazards &amp; DEM) in Tabs 1–2, "
@@ -449,36 +579,36 @@ UI_TRANSLATIONS = {
         "lbl_cz_fld": "<b>Zone Code / Name Field (Optional):</b>",
         "chk_cz_quick": "Also add simplified 'Hazir_Bolgeler_Hizli_Ozet' quick-read layer to QGIS map",
         "btn_cz_run": "▶ ANALYZE PROVIDED ZONES (KEEP EXACT POLYGONS)",
-        "grp_cz_out": "Provided Zones — Analysis Summary & Vulnerability Breakdown",
-        "btn_quick_csv": "⚡ Quick Summary (Excel / CSV)",
-        "btn_csv": "📊 Full Table (Excel / CSV)",
-        "btn_matrix": "📋 Tracking Matrix (Excel / CSV)",
+        "grp_cz_out": "Provided Zones — Analysis Summary && Vulnerability Breakdown",
+        "btn_quick_csv": "⚡ Quick Excel",
+        "btn_csv": "📊 Full Excel",
+        "btn_matrix": "📋 Matrix Excel",
         "btn_run_adv": "▶ RUN SYNTHESIS",
         "btn_run_std": "▶ RUN ZONING",
         "view_lbl": "View Mode:",
-        "rb_quick": "⚡ Quick & Plain Summary (Fast Read)",
-        "rb_both": "📋 Combined (Quick + Detailed)",
-        "rb_detailed": "🔬 Detailed Technical Only (ΔZ & Codes)",
+        "rb_quick": "⚡ Quick Summary",
+        "rb_both": "📋 Quick && Technical",
+        "rb_detailed": "🔬 Technical Only (ΔZ)",
         "filter_ph": "🔍 Filter by zone code or keyword (e.g. M12, Konut, Fay, Donatı, Sit)...",
-        "chk_quick_layer": "Also add simplified 'Alt_Bolgeler_Hizli_Ozet' layer to map (Quick-reading columns only)",
+        "chk_quick_layer": "Add simplified 'Alt_Bolgeler_Hizli_Ozet' quick-summary layer to map",
         "grp_a": "A. Core Planning Layers (EPSG:5253)",
         "lbl_bnd": "<b>1) Plan / Study Boundary (Polygon):</b>",
         "lbl_road": "<b>2) Road / Street Network (Line):</b>",
         "lbl_block": "<b>3) Urban Blocks / Land Use (Polygon):</b>",
-        "btn_auto_main": "⚡ Auto-Match All Project Layers, Buildings & Natural Thresholds",
+        "btn_auto_main": "⚡ Auto-Match Project Layers, Buildings && Natural Thresholds",
         "grp_b": "B. Optional Individual Buildings Layer",
-        "chk_use_bldg": "Use a separate 'Buildings / Footprints' layer for TAKS, floors, building order, structural condition & population",
+        "chk_use_bldg": "Use separate 'Buildings / Footprints' layer for TAKS, floors, order, condition && population",
         "lbl_bldg_lyr": "<b>Individual Buildings Layer:</b>",
-        "grp_c": "C. Estimated Population Distribution (Residential & Mixed Blocks by Building Count & Block Area)",
+        "grp_c": "C. Estimated Population Distribution (Residential && Mixed Blocks by Buildings && Area)",
         "rb_pop_1": "1) Auto from Attribute Column (Use population column; fallback to manual total below if empty)",
-        "rb_pop_2": "2) Enter Total Study Area Population Manually (Distributed only to residential & mixed blocks; Industry/Agri = 0)",
+        "rb_pop_2": "2) Manual Total Study Population (Residential && mixed blocks only; Industry/Agri = 0)",
         "rb_pop_3": "3) Estimate by Average Persons per Floor (Building count × floor count × persons/floor)",
         "lbl_man_pop": "<b>Manual Total Population:</b>",
         "lbl_pop_algo_info": "⚡ <b>Estimated Population Algorithm:</b> Distributes the total population exclusively to <b>Residential</b> and <b>Mixed (Residential + Commercial)</b> urban blocks according to each block's <b>building count</b>, <b>block area (m²)</b>, and <b>floor count</b> (Industry, Agriculture & Facility = 0).",
         "lbl_per_bldg": "<b>Persons per Floor:</b>",
         "grp_d1": "D1. Urban Block Attributes (Auto-Matched)",
         "grp_d2": "D2. Road Network Attributes (Auto-Matched)",
-        "grp_e": "E. Natural Thresholds & Protected Areas",
+        "grp_e": "E. Natural Thresholds && Protected Areas",
         "btn_auto_nat": "⚡ Auto-Scan Natural Thresholds (Stream, Fault, Sit, DEM...)",
         "btn_add_row": "➕ Add Row",
         "btn_del_row": "🗑️ Remove Selected",
@@ -491,7 +621,7 @@ UI_TRANSLATIONS = {
         "lbl_step": "<b>Slope Sampling Step:</b>",
         "grp_preset": "Zoning Strategy Presets (Select a Preset or Fine-Tune the Weights Manually Below)",
         "lbl_preset_sel": "<b>Select Zoning Strategy Preset:</b>",
-        "grp_g": "G. Manual Zoning Parameters & Fine-Tuning Weight Coefficients",
+        "grp_g": "G. Manual Zoning Parameters && Fine-Tuning Weight Coefficients",
         "p_k_t": "1) Target Sub-Zone Count (K)",
         "p_k_d": "Exact number of sequential sub-zones to create (e.g., 25 -> M1..M25, 28 -> M1..M28 without gaps).",
         "p_lu_t": "2) Land Use & Sub-Type Weight",
@@ -514,21 +644,21 @@ UI_TRANSLATIONS = {
         "p_odak_d": "Keeps industrial estates unified into massive, compact blocks and strictly isolates industry from encroaching into residential areas.",
         "p_grid_t": "11) Fallback Grid Size",
         "p_grid_d": "Default grid cell width used only when no road network layer is provided.",
-        "grp_h": "H. Compact Geometry, Quick Summary Layer & Matching Options",
-        "chk_medians": "Eliminate road corridors, medians & junction slivers (Roads only form boundaries, never long zone tails)",
-        "chk_excel": "Match sub-zones with canonical MPYY character & intervention profiles",
-        "chk_cells": "Also add intermediate urban block cells layer ('Imar_Adasi_Hucreleri') to map",
-        "grp_i": "I. Sub-Zoning Summary, Internal Cohesion & Neighbor Separation Rationales",
+        "grp_h": "H. Compact Geometry, Quick Summary Layer && Matching Options",
+        "chk_medians": "Filter road medians && slivers (Roads bound zones only, never long tails)",
+        "chk_excel": "Match sub-zones with canonical MPYY character && intervention profiles",
+        "chk_cells": "Add intermediate urban block cells layer ('Imar_Adasi_Hucreleri')",
+        "grp_i": "I. Sub-Zoning Summary, Internal Cohesion && Neighbor Separation Rationales",
         "lbl_about_top": "<b>Spatial Analysis Methodology, MAUP Solution & Comprehensive User Guide:</b>",
         "btn_browser": "🌐 Open Full Methodology Guide in Browser (HTML)",
-        "grp_read_guide": "How to Read the Results? (E / S / AC, Earthquake-Flood Drivers, Spacematrix & H/W)",
+        "grp_read_guide": "How to Read Results? (E / S / AC, Earthquake-Flood Drivers, Spacematrix && H/W)",
         "lbl_read_guide": (
             "<b>• Exposure (E — Maruz Kalma):</b> Measures population, building assets (TAKS/n) and proximity to active faults or streams/floodplains. Unpopulated vacant/farm blocks keep E low.<br>"
             "<b>• Sensitivity (S — Hassasiyet):</b> Physical structural fragility driven by poor buildings (%), floor height/FSI, attached walls (%), and terrain slope (%).<br>"
             "<b>• Adaptive Capacity (AC — Uyum Kapasitesi):</b> Evacuation street width, Street Canyon Debris Blockage (<b>H/W = 3m×Floors/Width</b>; ≥1.5 blocks vehicles), dead-end street %, gathering/facility access, and Open Space Ratio (OSR). <b>Higher AC lowers vulnerability [V = f(E×S/AC)].</b><br>"
             "<b>• Spacematrix &amp; MPYY Balance:</b> FSI (density), GSI (TAKS), OSR (openness), per-capita active facility m²/person, and Shannon land-use entropy (0-1)."
         ),
-        "grp_j": "J. Comprehensive Methodology, MAUP Solution & Step-by-Step User Manual",
+        "grp_j": "J. Comprehensive Methodology, MAUP Solution && Step-by-Step User Manual",
         "fld_kullanim": "Land / Building Use",
         "fld_kat": "Floor Count / Height",
         "fld_yd": "Building Order (Attached/Detached)",
@@ -537,6 +667,50 @@ UI_TRANSLATIONS = {
         "rfld_gen": "Road Width (Meters)",
         "rfld_kap": "Road Surface / Pavement",
         "rfld_tur": "Road Hierarchy / Class",
+        "lbl_synth_style": "<b>Cartographic Style:</b>",
+        "style_semantic": "Semantic + Pattern Hatching (Strategy Plate)",
+        "style_classic": "Classic HSV Categories",
+        "lbl_focus_axis": "<b>Focus Axis:</b>",
+        "chk_synth_group_mask": "Group Synthesis Layer Stack + Exterior Mask",
+        "chk_synth_vuln": "Vulnerability Hatch + Critical 'X' Markers",
+        "chk_synth_catchments": "Catchment Rings, Hotspots && Focus Tiers",
+        "chk_synth_corridors": "Network-Grounded Corridors && Gateways",
+        "plate_fmt_a3": "A3 Landscape",
+        "plate_fmt_a1": "A1 Portrait",
+        "btn_export_plate": "🗺️ Print Synthesis Plate",
+        "btn_export_plate_tip": "Create QGIS Print Layout & export Strategic Synthesis Plate (PDF / PNG / QPT)",
+        "swot_hdr": "GZFT / SWOT STRATEGIC SYNTHESIS (Data-Driven from Measured Metrics)",
+        "swot_str": "Strengths",
+        "swot_weak": "Weaknesses",
+        "swot_opp": "Opportunities",
+        "swot_thr": "Threats",
+        "swot_gaps": "Data Gaps / Exclusions",
+        "compact_organic": "🌿 Morphological / Natural Axis (Organic Valley Flow)",
+        "compact_balanced": "⚖️ Balanced Standard (Planning Norm)",
+        "compact_strict": "🎯 High Compactness (Convex / Circular Superblocks)",
+        "compact_tip": "Organic mode allows zones along stream/river valleys and transport axes to stretch naturally without penalty.",
+        "how_works": "How it Works:",
+        "recommended": "Recommended:",
+        "badge_macro": "🔵 Macro Zones (Coarse)",
+        "badge_district": "🟢 District Level (Optimal)",
+        "badge_neigh": "🟠 Neighborhood (Fine)",
+        "badge_micro": "🔴 Micro-Block (Very Fine)",
+        "badge_cap_strict": "🔵 Strict Equal Area",
+        "badge_cap_bal": "🟢 Balanced Cap (Optimal)",
+        "badge_cap_open": "🟠 Open Macro-Zone",
+        "badge_inactive": "⚪ Inactive (0%)",
+        "badge_low": "🔵 Low Impact",
+        "badge_bal": "🟢 Balanced",
+        "badge_dom": "🟠 Dominant",
+        "msg_saved_title": "Saved",
+        "msg_saved_quick": "Quick Summary table saved:",
+        "msg_saved_full": "Full Sub-Zone table saved:",
+        "msg_saved_matrix": "Analysis Tracking Matrix saved:",
+        "msg_plate_title": "Strategy Synthesis Plate Exported",
+        "msg_plate_saved": "Print Layout registered in QGIS Project and exported:",
+        "msg_missing_layer": "Missing Layer",
+        "msg_missing_layer_txt": "Please select at least one of Plan Boundary, Road Network, Urban Blocks, or Buildings layers.",
+        "msg_error_title": "Analysis Error",
     },
     "tr": {
         "win_title": "Kentsel Bölgeleme ve Kırılganlık Analiz Aracı — Baran Adsuna",
@@ -547,15 +721,15 @@ UI_TRANSLATIONS = {
         "mode_adv": "🔬 İleri Sentez & Müdahale Atlası Modu (Kırılganlık [E/S/AC], Rakım, Müdahale Kararları & Plan Karşılığı)",
         "badge_adv": "🔬 <b>İleri Sentez & Müdahale Atlası Aktif:</b> M1..MK ardışık kodları, 3B Kırılganlık (E·S/AC), DEM Rakım (Z), Müdahale Kararları, 1/5000 & 1/1000 Plan Karşılıkları ve Analiz İzleme Matrisi üretilir.",
         "badge_std": "🌱 <b>Standart Bölgeleme Modu Aktif:</b> A1..AK ardışık morfolojik profil eşleşmesi, doku homojenliği ve sınır ayrım gerekçeleri üretilir (Hızlı ön bölgeleme).",
-        "btn_help": "📖 Metodoloji ve Kullanım El Kitabı (HTML)",
+        "btn_help": "📖 Metodoloji && El Kitabı (HTML)",
         "btn_top_adv": "▶ İleri Sentez Başlat",
         "btn_top_std": "▶ Standart Bölgele",
-        "tab_1": "1. Katmanlar, Yapılar ve Nüfus",
-        "tab_2": "2. Doğal Eşikler ve DEM",
-        "tab_3": "3. Ağırlıklar ve Ayarlar",
-        "tab_4": "4. Sınır Ayrım Gerekçeleri Raporu",
-        "tab_5": "5. Metodoloji ve MPYY Kılavuzu",
-        "tab_6": "6. Hazır Bölge Analizi",
+        "tab_1": "1. Katmanlar && Nüfus",
+        "tab_2": "2. Eşikler && DEM",
+        "tab_3": "3. Ağırlıklar && Stil",
+        "tab_4": "4. Sentez Raporu",
+        "tab_5": "5. Metodoloji",
+        "tab_6": "6. Hazır Bölge",
         "grp_cz": "K. Kullanıcının Kendi Çizdiği / Hazır Bölgelerini Analiz Et (Sınırlar Korunur)",
         "lbl_cz_info": (
             "⚡ <b>Bağımsız Hazır Bölge Analiz Modülü:</b> Sekme 1 ve 2'deki mevcut durum katmanlarınız (imar adaları/arazi kullanımı, yapılar, yol ağı, nüfus, fay/dere/risk ve DEM) "
@@ -567,17 +741,17 @@ UI_TRANSLATIONS = {
         "chk_cz_quick": "Haritaya ayrıca sadeleştirilmiş 'Hazir_Bolgeler_Hizli_Ozet' hızlı okuma katmanı ekle",
         "btn_cz_run": "▶ HAZIR BÖLGELERİ ANALİZ ET (SINIRLARI KORUYARAK)",
         "grp_cz_out": "Hazır Bölgeler — Ölçüm Özeti ve Kırılganlık (E×S/AC) Sonuçları",
-        "btn_quick_csv": "⚡ Hızlı Özet (Excel / CSV)",
-        "btn_csv": "📊 Detaylı Tablo (Excel / CSV)",
-        "btn_matrix": "📋 İzleme Matrisi (Excel / CSV)",
-        "btn_run_adv": "▶ İLERİ SENTEZ ÇALIŞTIR",
+        "btn_quick_csv": "⚡ Hızlı Excel",
+        "btn_csv": "📊 Tam Excel",
+        "btn_matrix": "📋 İzleme Matrisi",
+        "btn_run_adv": "▶ SENTEZİ ÇALIŞTIR",
         "btn_run_std": "▶ STANDART BÖLGELE",
         "view_lbl": "Görünüm Modu:",
-        "rb_quick": "⚡ Hızlı ve Sade Özet (Hızlı Okuma)",
-        "rb_both": "📋 İkisi Bir Arada (Özet + Detay)",
-        "rb_detailed": "🔬 Sadece Detaylı Teknik (ΔZ & Kodlar)",
+        "rb_quick": "⚡ Hızlı Özet",
+        "rb_both": "📋 Özet && Teknik",
+        "rb_detailed": "🔬 Sadece Teknik (ΔZ)",
         "filter_ph": "🔍 Bölge kodu veya anahtar kelime filtrele (ör: M12, Konut, Fay, Donatı, Sit)...",
-        "chk_quick_layer": "Haritaya ayrıca sadeleştirilmiş 'Alt_Bolgeler_Hizli_Ozet' katmanı ekle (Sadece hızlı okuma sütunları)",
+        "chk_quick_layer": "Haritaya sadeleştirilmiş 'Alt_Bolgeler_Hizli_Ozet' katmanı ekle",
         "grp_a": "A. Ana Planlama Katmanları (EPSG:5253)",
         "lbl_bnd": "<b>1) Plan / Onama Sınırı (Poligon):</b>",
         "lbl_road": "<b>2) Ulaşım / Yol Ağı (Çizgi):</b>",
@@ -632,13 +806,13 @@ UI_TRANSLATIONS = {
         "p_grid_t": "11) Yedek Izgara Boyutu",
         "p_grid_d": "Yol ağı katmanı verilmediğinde kullanılacak varsayılan ızgara hücre genişliği.",
         "grp_h": "H. Kompakt Geometri, Hızlı Özet Katmanı ve Eşleştirme Seçenekleri",
-        "chk_medians": "Yol koridorlarını, refüj ve kavşak şeritlerini süz (Yollar yalnızca sınır oluşturur, ince uzun kuyruk olamaz)",
+        "chk_medians": "Yol koridorlarını, refüj && kavşak şeritlerini süz (Yollar yalnızca sınır olur, kuyruk oluşmaz)",
         "chk_excel": "Alt bölgeleri MPYY karakter ve müdahale profilleriyle eşleştir",
-        "chk_cells": "Ara işlem katmanı olan imar adası hücrelerini ('Imar_Adasi_Hucreleri') haritaya ekle",
+        "chk_cells": "Ara işlem katmanı imar adası hücrelerini ('Imar_Adasi_Hucreleri') ekle",
         "grp_i": "I. Alt Bölgeleme Özeti, İç Bütünlük ve Komşu Bölgelerden Ayrım Gerekçeleri",
         "lbl_about_top": "<b>Mekânsal Analiz Metodolojisi, MAUP Çözümü ve Kapsamlı Kullanım El Kitabı:</b>",
         "btn_browser": "🌐 Bu El Kitabını Tam Sayfa Tarayıcıda Aç (HTML)",
-        "grp_read_guide": "Sonuçları Nasıl Okumalı? (Maruz Kalma [E], Hassasiyet [S], Uyum Kapasitesi [AC], Spacematrix & H/W)",
+        "grp_read_guide": "Sonuçları Nasıl Okumalı? (E / S / AC, Spacematrix && H/W)",
         "lbl_read_guide": (
             "<b>• Maruz Kalma (E):</b> Afete maruz kalan nüfus/bina varlığı ile diri fay veya dere/taşkın kaynağına yakınlığı ölçer. Yapısız/nüfussuz tarım veya boş adalarda insan maruziyeti düşüktür.<br>"
             "<b>• Hassasiyet (S):</b> Kötü durumdaki yapı oranı, kat sayısı/FSI, bitişik nizam çekiçleme riski ve zemin eğimine bağlı fiziksel yıkım duyarlılığını gösterir.<br>"
@@ -654,6 +828,50 @@ UI_TRANSLATIONS = {
         "rfld_gen": "Yol Genişliği (Metre)",
         "rfld_kap": "Üstyapı / Kaplama Türü",
         "rfld_tur": "Yol Kademelenmesi",
+        "lbl_synth_style": "<b>Kartografik Stil:</b>",
+        "style_semantic": "Anlamsal + Tarama Deseni (Strateji Paftası)",
+        "style_classic": "Klasik HSV Kategorileri",
+        "lbl_focus_axis": "<b>Odak Ekseni:</b>",
+        "chk_synth_group_mask": "Sentez Katman Grubunu Kur + Dış Alan Maskesi",
+        "chk_synth_vuln": "Kırılganlık Taraması + Kritik 'X' Uyarıları",
+        "chk_synth_catchments": "Çekim Halkaları, Sıcak Noktalar && Kademeler",
+        "chk_synth_corridors": "Ağ Tabanlı Koridorlar && Dış Ulaşım Aksları",
+        "plate_fmt_a3": "A3 Yatay",
+        "plate_fmt_a1": "A1 Dikey",
+        "btn_export_plate": "🗺️ Sentez Paftası Yazdır",
+        "btn_export_plate_tip": "QGIS Baskı Düzeni oluştur ve Strateji Sentez Paftasını dışa aktar (PDF / PNG / QPT)",
+        "swot_hdr": "GZFT / SWOT STRATEJİK SENTEZ (Ölçülen Gerçek Verilere Dayalı)",
+        "swot_str": "Güçlü Yönler (G)",
+        "swot_weak": "Zayıf Yönler (Z)",
+        "swot_opp": "Fırsatlar (F)",
+        "swot_thr": "Tehditler (T)",
+        "swot_gaps": "Veri Eksikleri / Dışlamalar",
+        "compact_organic": "🌿 Morfolojik / Doğal Eksen (Vadi & Koridor Serbestliği)",
+        "compact_balanced": "⚖️ Dengeli Standart (Planlama Normu)",
+        "compact_strict": "🎯 Yüksek Kompaktlık (Dairesel / Dörtgen Süperbloklar)",
+        "compact_tip": "Organik mod, dere vadileri ve ulaşım aksları boyunca uzanan bölgelerin yapay ceza almadan doğal biçimde uzamasına izin verir.",
+        "how_works": "Çalışma Mantığı:",
+        "recommended": "Önerilen:",
+        "badge_macro": "🔵 Makro Bölge (Kaba)",
+        "badge_district": "🟢 Semt / Doku (Önerilen)",
+        "badge_neigh": "🟠 Mahalle / Detay",
+        "badge_micro": "🔴 Mikro-Ada (Aşırı Detay)",
+        "badge_cap_strict": "🔵 Katı Eşit Alan (Bölünme Riski)",
+        "badge_cap_bal": "🟢 Dengeli Tavan (Önerilen)",
+        "badge_cap_open": "🟠 Geniş / Serbest Makro-Bölge",
+        "badge_inactive": "⚪ Etkisiz (%0)",
+        "badge_low": "🔵 Düşük Etki",
+        "badge_bal": "🟢 Dengeli / Standart",
+        "badge_dom": "🟠 Yüksek / Baskın",
+        "msg_saved_title": "Kaydedildi",
+        "msg_saved_quick": "Hızlı Özet tablosu kaydedildi:",
+        "msg_saved_full": "Tam Alt Bölge tablosu kaydedildi:",
+        "msg_saved_matrix": "Analiz İzleme Matrisi kaydedildi:",
+        "msg_plate_title": "Strateji Sentez Paftası Dışa Aktarıldı",
+        "msg_plate_saved": "Baskı düzeni QGIS projesine kaydedildi ve dışa aktarıldı:",
+        "msg_missing_layer": "Eksik Katman",
+        "msg_missing_layer_txt": "Lütfen en azından Plan Sınırı, Yol Ağı, İmar Adası veya Yapı katmanlarından birini seçiniz.",
+        "msg_error_title": "Analiz Hatası",
     },
     "zh": {
         "win_title": "城市分区与脆弱性分析工具 — Baran Adsuna",
@@ -664,27 +882,157 @@ UI_TRANSLATIONS = {
         "mode_adv": "🔬 高级综合与干预图集模式 (脆弱性 [E/S/AC]、高程、干预决策与规划对应)",
         "badge_adv": "🔬 <b>高级综合与干预图集已启用:</b> 生成 M1..MK 连续编码、三维脆弱性 (E·S/AC)、DEM高程、干预决策与分析追踪矩阵。",
         "badge_std": "🌱 <b>标准分区模式已启用:</b> 生成 A1..AK 连续形态轮廓匹配、肌理同质性与边界划分依据。",
-        "btn_help": "📖 方法论与用户手册 (HTML)",
-        "btn_top_adv": "▶ 启动高级综合",
-        "btn_top_std": "▶ 启动标准分区",
-        "tab_1": "1. 图层、建筑与人口",
-        "tab_2": "2. 自然阈值与 DEM",
-        "tab_3": "3. 权重与参数设置",
-        "tab_4": "4. 边界划分依据与报告",
-        "tab_5": "5. 方法论与 MPYY 指南",
-        "tab_6": "6. 既有分区评估分析",
+        "btn_help": "📖 方法论与手册 (HTML)",
+        "btn_top_adv": "▶ 启动综合",
+        "btn_top_std": "▶ 启动分区",
+        "tab_1": "1. 图层与人口",
+        "tab_2": "2. 阈值与 DEM",
+        "tab_3": "3. 权重与样式",
+        "tab_4": "4. 综合报告",
+        "tab_5": "5. 方法论",
+        "tab_6": "6. 既有分区",
+        "grp_cz": "K. 评估用户既有分区图层 (保持原始边界不变)",
+        "lbl_cz_info": (
+            "⚡ <b>既有分区独立分析器:</b> 保持第1–2选项卡中的现状图层（街区/用地、建筑、路网、人口、灾害与DEM），"
+            "在下方选择您的<b>既有分区面图层</b>。插件将在<b>不修改或分割原始边界与编码</b>的前提下，"
+            "完整计算 Spacematrix (FSI/OSR)、街道峡谷 H/W、断头路比例、E×S/AC 脆弱性与 ΔZ 邻域对比。"
+        ),
+        "lbl_cz_lyr": "<b>既有分区面图层:</b>",
+        "lbl_cz_fld": "<b>分区编码 / 名称字段 (可选):</b>",
+        "chk_cz_quick": "同时向地图添加简化版 'Hazir_Bolgeler_Hizli_Ozet' 快速阅读图层",
         "btn_cz_run": "▶ 分析既有分区 (保持原边界不变)",
-        "btn_quick_csv": "⚡ 快速摘要表 (Excel / CSV)",
-        "btn_csv": "📊 完整分区表 (Excel / CSV)",
-        "btn_matrix": "📋 分析追踪矩阵 (Excel / CSV)",
-        "btn_run_adv": "▶ 运行 — 高级综合与干预图集",
-        "btn_run_std": "▶ 运行 — 标准形态分区",
+        "grp_cz_out": "既有分区 — 分析摘要与脆弱性分解",
+        "btn_quick_csv": "⚡ 快速 Excel",
+        "btn_csv": "📊 完整 Excel",
+        "btn_matrix": "📋 追踪矩阵",
+        "btn_run_adv": "▶ 运行综合",
+        "btn_run_std": "▶ 运行分区",
         "view_lbl": "视图模式:",
-        "rb_quick": "⚡ 快速简明摘要 (快速阅读)",
-        "rb_both": "📋 双重对照 (快速摘要 + 详细数据)",
-        "rb_detailed": "🔬 仅详细技术验证 (ΔZ 与代码)",
+        "rb_quick": "⚡ 快速摘要",
+        "rb_both": "📋 摘要与技术",
+        "rb_detailed": "🔬 仅技术详情 (ΔZ)",
         "filter_ph": "🔍 按分区代码或关键词筛选 (例如: M12, Konut, Fay)...",
-        "chk_quick_layer": "同时在地图中添加精简版 'Alt_Bolgeler_Hizli_Ozet' 图层 (仅包含快速阅读列)",
+        "chk_quick_layer": "同时在地图中添加精简版 'Alt_Bolgeler_Hizli_Ozet' 图层",
+        "grp_a": "A. 核心规划图层 (EPSG:5253)",
+        "lbl_bnd": "<b>1) 规划 / 研究范围边界 (面):</b>",
+        "lbl_road": "<b>2) 道路 / 街巷网络 (线):</b>",
+        "lbl_block": "<b>3) 城市街区 / 用地分类 (面):</b>",
+        "btn_auto_main": "⚡ 自动匹配项目图层、建筑与自然阈值",
+        "grp_b": "B. 可选单体建筑图层",
+        "chk_use_bldg": "使用独立的“建筑轮廓”图层以精确计算建筑密度(TAKS)、层数、建筑排列、建筑质量及人口",
+        "lbl_bldg_lyr": "<b>单体建筑图层:</b>",
+        "grp_c": "C. 估算人口空间分配 (按建筑数量与街区面积加权至居住及混合街区)",
+        "rb_pop_1": "1) 自动读取属性列 (使用人口字段；为空时按下方手动总量分配)",
+        "rb_pop_2": "2) 手动输入研究区总人口 (仅分配至居住与混合街区；工业/农业 = 0)",
+        "rb_pop_3": "3) 按层均人口估算 (建筑数量 × 平均层数 × 每层人数)",
+        "lbl_man_pop": "<b>手动输入总人口:</b>",
+        "lbl_pop_algo_info": "⚡ <b>人口空间分配算法:</b> 总人口仅分配至<b>居住</b>和<b>商住混合</b>街区，按各街区的<b>建筑数量</b>、<b>面积 (m²)</b> 和<b>层数</b>加权计算（工业、农田与公共设施 = 0）。",
+        "lbl_per_bldg": "<b>每层平均人数:</b>",
+        "grp_d1": "D1. 街区属性字段 (自动匹配)",
+        "grp_d2": "D2. 路网属性字段 (自动匹配)",
+        "grp_e": "E. 自然阈值与保护区图层",
+        "btn_auto_nat": "⚡ 自动扫描自然阈值图层 (河道、断层、保护区、DEM...)",
+        "btn_add_row": "➕ 添加行",
+        "btn_del_row": "🗑️ 删除选中",
+        "tbl_col_0": "阈值 / 图层名称",
+        "tbl_col_1": "分析角色 (自动选择)",
+        "tbl_col_2": "地图图层",
+        "grp_f": "F. 数字高程模型 (DEM) / 坡度栅格",
+        "lbl_dem": "<b>DEM 或坡度栅格:</b>",
+        "chk_slope": "所选栅格直接包含百分比坡度 (%) 值",
+        "lbl_step": "<b>坡度采样步长:</b>",
+        "grp_preset": "分区策略预设 (一键选择或下方手动微调权重)",
+        "lbl_preset_sel": "<b>选择分区策略预设:</b>",
+        "grp_g": "G. 分区参数与手动权重系数微调",
+        "p_k_t": "1) 目标子分区数量 (K)",
+        "p_k_d": "生成的连续子分区总数（例如：25 生成 M1..M25，无跳号）。",
+        "p_lu_t": "2) 用地性质与细分类型权重",
+        "p_lu_d": "区分低/高密度居住、商业、工业、农田、墓地与公共设施街区。",
+        "p_yapi_t": "3) 建筑 / 层数 / 密度权重",
+        "p_yapi_d": "区分建筑密度 (TAKS)、层数、排列形式、危旧房比例和人口密度。",
+        "p_dogal_t": "4) 自然阈值与保护权重",
+        "p_dogal_d": "隔离河道缓冲、陡坡、活动断层、历史遗产及洪涝风险区。",
+        "p_geo_t": "5) 空间紧凑度与规整形态权重",
+        "p_geo_d": "保持分区规整紧凑，严格防止细长条带或沿路蛇形走廊。",
+        "p_cap_t": "6) 宏观分区聚合与面积上限",
+        "p_cap_d": "防止大型工业园区 (OIZ) 或连片农田被人为割裂。",
+        "p_bos_t": "7) 未建空地与新规划潜力权重",
+        "p_bos_d": "清晰分离高空置率储备街区与成熟建成区。",
+        "p_erisim_t": "8) 公共设施可达性权重",
+        "p_erisim_d": "聚合学校、医疗与公园步行可达性相近的街区。",
+        "p_yol_t": "9) 道路网络相似性权重",
+        "p_yol_d": "合并道路宽度、铺装类型与道路等级相近的相邻街区。",
+        "p_odak_t": "10) 工业园区 (OIZ) 聚合与隔离",
+        "p_odak_d": "保持工业区紧凑成片，严格隔离工业与居住用地。",
+        "p_grid_t": "11) 备用网格尺寸",
+        "p_grid_d": "仅在未提供道路网络图层时使用的默认网格单元宽度。",
+        "grp_h": "H. 紧凑几何、快速图层、匹配与综合制图选项",
+        "chk_medians": "过滤道路走廊、分隔带与交叉口碎面（道路仅作边界，不形成细长尾翼）",
+        "chk_excel": "将子分区匹配至标准 MPYY 特征与干预策略模板",
+        "chk_cells": "同时向地图添加街区中间单元图层 ('Imar_Adasi_Hucreleri')",
+        "grp_i": "I. 子分区摘要、内部均质性与边界划分依据",
+        "lbl_about_top": "<b>空间分析方法论、MAUP 解决方案与完整用户手册:</b>",
+        "btn_browser": "🌐 在浏览器中打开完整方法论手册 (HTML)",
+        "grp_read_guide": "结果解读指南 (暴露度 E、敏感性 S、适应能力 AC、Spacematrix 与 H/W)",
+        "lbl_read_guide": (
+            "<b>• 暴露度 (E):</b> 衡量受灾害影响的人口、建筑资产 (TAKS/栋数) 及距断层/河道距离。无人口农田/空地保持低暴露。<br>"
+            "<b>• 敏感性 (S):</b> 由危旧房比例、层高/FSI、毗连排列及地形坡度驱动的物理脆弱性。<br>"
+            "<b>• 适应能力 (AC):</b> 疏散路宽、街道峡谷碎石堵塞比 (<b>H/W = 3m×层数/路宽</b>; ≥1.5 阻断救援)、断头路率、避难/设施可达性及开敞率 (OSR)。<b>AC 越高则脆弱性越低。</b><br>"
+            "<b>• Spacematrix 与 MPYY 平衡:</b> 提供 FSI、GSI (TAKS)、OSR、人均活动设施面积 (m²/人) 及香农混合度熵 (0-1)。"
+        ),
+        "grp_j": "J. 综合方法论、MAUP 解决方案与分步操作指南",
+        "fld_kullanim": "土地 / 建筑用途",
+        "fld_kat": "建筑层数 / 高度",
+        "fld_yd": "建筑排列 (毗连/独立)",
+        "fld_durum": "建筑物理质量",
+        "fld_nufus": "人口 / 常住人口列",
+        "rfld_gen": "道路宽度 (米)",
+        "rfld_kap": "路面 / 铺装类型",
+        "rfld_tur": "道路等级 / 分类",
+        "lbl_synth_style": "<b>制图样式:</b>",
+        "style_semantic": "语义填色 + 纹理斜线 (战略综合图版)",
+        "style_classic": "经典 HSV 分类填色",
+        "lbl_focus_axis": "<b>聚焦主轴:</b>",
+        "chk_synth_group_mask": "图层分组叠加 + 研究区外遮罩",
+        "chk_synth_vuln": "脆弱性斜线叠加 + 临界 'X' 警示标记",
+        "chk_synth_catchments": "服务吸引圈、热点交集与焦点分级",
+        "chk_synth_corridors": "路网真实廊道与外部交通枢纽箭头",
+        "plate_fmt_a3": "A3 横版",
+        "plate_fmt_a1": "A1 竖版",
+        "btn_export_plate": "🗺️ 打印综合图版",
+        "btn_export_plate_tip": "生成 QGIS 打印布局并导出战略综合图版 (PDF / PNG / QPT)",
+        "swot_hdr": "GZFT / SWOT 战略综合分析 (严格基于实测指标)",
+        "swot_str": "优势 (Strengths)",
+        "swot_weak": "劣势 (Weaknesses)",
+        "swot_opp": "机遇 (Opportunities)",
+        "swot_thr": "威胁 (Threats)",
+        "swot_gaps": "数据缺口 / 未提供图层",
+        "compact_organic": "🌿 形态 / 自然轴线模式 (沿河谷与廊道自由延展)",
+        "compact_balanced": "⚖️ 均衡标准模式 (规划规范)",
+        "compact_strict": "🎯 高紧凑度模式 (凸多边形 / 圆形超级街区)",
+        "compact_tip": "有机模式允许沿河谷和交通轴线的分区自然延展而不受形状惩罚。",
+        "how_works": "工作原理:",
+        "recommended": "推荐范围:",
+        "badge_macro": "🔵 宏观分区 (粗略)",
+        "badge_district": "🟢 片区级 (推荐)",
+        "badge_neigh": "🟠 邻里级 (精细)",
+        "badge_micro": "🔴 微街区 (极细)",
+        "badge_cap_strict": "🔵 严格均等面积",
+        "badge_cap_bal": "🟢 均衡上限 (推荐)",
+        "badge_cap_open": "🟠 开放宏观分区",
+        "badge_inactive": "⚪ 未启用 (0%)",
+        "badge_low": "🔵 低影响",
+        "badge_bal": "🟢 均衡标准",
+        "badge_dom": "🟠 高权重主导",
+        "msg_saved_title": "已保存",
+        "msg_saved_quick": "快速摘要表已保存:",
+        "msg_saved_full": "完整子分区表已保存:",
+        "msg_saved_matrix": "分析追踪矩阵已保存:",
+        "msg_plate_title": "战略综合图版已导出",
+        "msg_plate_saved": "打印布局已注册至 QGIS 工程并导出:",
+        "msg_missing_layer": "缺少图层",
+        "msg_missing_layer_txt": "请至少选择规划边界、道路网络、城市街区或建筑图层之一。",
+        "msg_error_title": "分析错误",
     },
     "es": {
         "win_title": "Herramienta de Zonificación Urbana y Vulnerabilidad — Baran Adsuna",
@@ -695,27 +1043,157 @@ UI_TRANSLATIONS = {
         "mode_adv": "🔬 Modo de Síntesis Avanzada y Atlas de Intervención (Vulnerabilidad [E/S/AC], Elevación y Plan)",
         "badge_adv": "🔬 <b>Síntesis Avanzada Activa:</b> Genera códigos secuenciales M1..MK, Vulnerabilidad 3D (E·S/AC), Elevación DEM, Decisiones y Matriz.",
         "badge_std": "🌱 <b>Modo Estándar Activo:</b> Genera perfiles secuenciales A1..AK, homogeneidad morfológica y justificación de límites.",
-        "btn_help": "📖 Metodología y Manual (HTML)",
+        "btn_help": "📖 Metodología y Guía (HTML)",
         "btn_top_adv": "▶ Iniciar Síntesis",
         "btn_top_std": "▶ Zonificar",
-        "tab_1": "1. Capas, Edificios y Pob.",
-        "tab_2": "2. Umbrales Naturales y DEM",
-        "tab_3": "3. Pesos y Ajustes",
-        "tab_4": "4. Justificación de Límites y Reporte",
-        "tab_5": "5. Metodología y Guía MPYY",
-        "tab_6": "6. Analizador de Zonas Existentes",
+        "tab_1": "1. Capas y Pob.",
+        "tab_2": "2. Umbrales y DEM",
+        "tab_3": "3. Pesos y Estilo",
+        "tab_4": "4. Informe Síntesis",
+        "tab_5": "5. Metodología",
+        "tab_6": "6. Zonas Propias",
+        "grp_cz": "K. Analizar Zonas Propias Predibujadas (Sin Modificar Límites)",
+        "lbl_cz_info": (
+            "⚡ <b>Analizador de Zonas Existentes:</b> Mantenga sus capas actuales (manzanas/uso de suelo, edificios, vías, población, amenazas y DEM) en las pestañas 1–2 "
+            "y seleccione su <b>propia capa de zonas poligonales</b> abajo. Cada polígono conserva su <b>límite y código exactos</b> al calcular métricas, "
+            "Spacematrix (FSI/OSR), razón H/W, % vías sin salida, vulnerabilidad E×S/AC y comparaciones ΔZ."
+        ),
+        "lbl_cz_lyr": "<b>Capa Poligonal de Zonas Propias:</b>",
+        "lbl_cz_fld": "<b>Campo de Código / Nombre (Opcional):</b>",
+        "chk_cz_quick": "Añadir también capa simplificada 'Hazir_Bolgeler_Hizli_Ozet' al mapa QGIS",
         "btn_cz_run": "▶ ANALIZAR ZONAS PROPIAS (SIN MODIFICAR LÍMITES)",
-        "btn_quick_csv": "⚡ Resumen Rápido (Excel / CSV)",
-        "btn_csv": "📊 Tabla Completa (Excel / CSV)",
-        "btn_matrix": "📋 Matriz de Seguimiento (Excel / CSV)",
-        "btn_run_adv": "▶ EJECUTAR — SÍNTESIS AVANZADA",
-        "btn_run_std": "▶ EJECUTAR — ZONIFICACIÓN ESTÁNDAR",
+        "grp_cz_out": "Zonas Propias — Resumen de Análisis y Vulnerabilidad",
+        "btn_quick_csv": "⚡ Excel Rápido",
+        "btn_csv": "📊 Excel Completo",
+        "btn_matrix": "📋 Matriz Excel",
+        "btn_run_adv": "▶ EJECUTAR SÍNTESIS",
+        "btn_run_std": "▶ ZONIFICAR",
         "view_lbl": "Vista:",
-        "rb_quick": "⚡ Resumen Rápido (Lectura Simple)",
-        "rb_both": "📋 Vista Combinada (Resumen + Detalle)",
-        "rb_detailed": "🔬 Solo Técnico Detallado (ΔZ y Códigos)",
+        "rb_quick": "⚡ Resumen Rápido",
+        "rb_both": "📋 Resumen y Técnico",
+        "rb_detailed": "🔬 Solo Técnico (ΔZ)",
         "filter_ph": "🔍 Filtrar por código de zona o palabra clave (ej: M12, Konut, Fay)...",
-        "chk_quick_layer": "Añadir también capa simplificada 'Alt_Bolgeler_Hizli_Ozet' al mapa (Solo columnas rápidas)",
+        "chk_quick_layer": "Añadir capa simplificada 'Alt_Bolgeler_Hizli_Ozet' al mapa",
+        "grp_a": "A. Capas Principales de Planificación (EPSG:5253)",
+        "lbl_bnd": "<b>1) Límite del Plan / Área de Estudio (Polígono):</b>",
+        "lbl_road": "<b>2) Red Vial / Calles (Línea):</b>",
+        "lbl_block": "<b>3) Manzanas Urbanas / Uso del Suelo (Polígono):</b>",
+        "btn_auto_main": "⚡ Emparejar Automáticamente Capas, Edificios y Umbrales Naturales",
+        "grp_b": "B. Capa Opcional de Edificios Individuales",
+        "chk_use_bldg": "Usar una capa separada de 'Edificios / Huellas' para TAKS, alturas, tipología, estado físico y población",
+        "lbl_bldg_lyr": "<b>Capa de Edificios Individuales:</b>",
+        "grp_c": "C. Distribución Estimada de Población (Manzanas Residenciales y Mixtas por Edificios y Área)",
+        "rb_pop_1": "1) Automático desde Columna (Usa columna de población; si está vacía usa el total manual)",
+        "rb_pop_2": "2) Ingresar Población Total Manualmente (Solo a manzanas residenciales y mixtas; Industria/Agro = 0)",
+        "rb_pop_3": "3) Estimar por Promedio de Personas por Planta (Edificios × plantas × personas/planta)",
+        "lbl_man_pop": "<b>Población Total Manual:</b>",
+        "lbl_pop_algo_info": "⚡ <b>Algoritmo de Población:</b> Distribuye la población total únicamente en manzanas <b>Residenciales</b> y <b>Mixtas</b> según su <b>número de edificios</b>, <b>área (m²)</b> y <b>plantas</b> (Industria, Agricultura y Equipamientos = 0).",
+        "lbl_per_bldg": "<b>Personas por Planta:</b>",
+        "grp_d1": "D1. Atributos de Manzanas Urbanas (Autoasignados)",
+        "grp_d2": "D2. Atributos de Red Vial (Autoasignados)",
+        "grp_e": "E. Umbrales Naturales y Áreas Protegidas",
+        "btn_auto_nat": "⚡ Escanear Umbrales Naturales (Arroyo, Falla, Patrimonio, DEM...)",
+        "btn_add_row": "➕ Añadir Fila",
+        "btn_del_row": "🗑️ Eliminar Selección",
+        "tbl_col_0": "Nombre de Umbral / Capa",
+        "tbl_col_1": "Rol de Análisis (Autoasignado)",
+        "tbl_col_2": "Capa en Mapa",
+        "grp_f": "F. Modelo Digital de Elevación (DEM) / Capa de Pendiente",
+        "lbl_dem": "<b>Ráster DEM o Pendiente:</b>",
+        "chk_slope": "El ráster seleccionado contiene directamente valores de pendiente (%)",
+        "lbl_step": "<b>Paso de Muestreo de Pendiente:</b>",
+        "grp_preset": "Estrategias Predefinidas de Zonificación (Seleccione o Ajuste Pesos Manualmente)",
+        "lbl_preset_sel": "<b>Estrategia de Zonificación:</b>",
+        "grp_g": "G. Parámetros Manuales de Zonificación y Coeficientes de Peso",
+        "p_k_t": "1) Número Objetivo de Subzonas (K)",
+        "p_k_d": "Número exacto de subzonas secuenciales a generar (ej., 25 -> M1..M25 sin saltos).",
+        "p_lu_t": "2) Peso de Uso del Suelo y Subtipos",
+        "p_lu_d": "Separa manzanas residenciales (baja vs alta densidad), comerciales, industriales, agrícolas, cementerios y equipamientos.",
+        "p_yapi_t": "3) Peso de Edificación / Alturas / Densidad",
+        "p_yapi_d": "Separa manzanas según TAKS, número de plantas, orden constructivo, mal estado y densidad poblacional.",
+        "p_dogal_t": "4) Peso de Umbrales Naturales y Protección",
+        "p_dogal_d": "Aísla márgenes fluviales, pendientes pronunciadas, fallas activas y áreas patrimoniales o inundables.",
+        "p_geo_t": "5) Peso de Compacidad Espacial y Forma Cohesiva",
+        "p_geo_d": "Fuerza formas compactas y evita estrictamente corredores estrechos o tiras viales alargadas.",
+        "p_cap_t": "6) Cohesión de Macrozonas y Tope de Área",
+        "p_cap_d": "Evita la división artificial de grandes polígonos industriales o llanuras agrícolas continuas.",
+        "p_bos_t": "7) Peso de Suelo Vacante y Potencial de Planificación",
+        "p_bos_d": "Separa manzanas de reserva vacantes (para nuevos planes) del tejido urbano consolidado.",
+        "p_erisim_t": "8) Peso de Accesibilidad a Equipamientos",
+        "p_erisim_d": "Agrupa manzanas vecinas con acceso peatonal similar a escuelas, salud y parques.",
+        "p_yol_t": "9) Peso de Similitud de Red Vial",
+        "p_yol_d": "Agrupa manzanas vecinas con ancho vial, pavimento y jerarquía de calle similares.",
+        "p_odak_t": "10) Cohesión y Aislamiento Industrial (OIZ)",
+        "p_odak_d": "Mantiene las zonas industriales compactas y aisladas de las áreas residenciales.",
+        "p_grid_t": "11) Tamaño de Malla de Respaldo",
+        "p_grid_d": "Ancho de celda usado solo cuando no se proporciona capa de red vial.",
+        "grp_h": "H. Geometría Compacta, Capa Rápida y Opciones Cartográficas",
+        "chk_medians": "Eliminar corredores viales, medianas e isletas (Las vías solo delimitan, nunca forman colas)",
+        "chk_excel": "Emparejar subzonas con perfiles normativos MPYY e intervención",
+        "chk_cells": "Añadir también capa intermedia de celdas urbanas ('Imar_Adasi_Hucreleri')",
+        "grp_i": "I. Resumen de Subzonificación, Cohesión Interna y Justificación de Límites",
+        "lbl_about_top": "<b>Metodología de Análisis Espacial, Solución MAUP y Manual Completo:</b>",
+        "btn_browser": "🌐 Abrir Guía Metodológica Completa en Navegador (HTML)",
+        "grp_read_guide": "Cómo Leer los Resultados (E / S / AC, Impulsores Sísmicos/Fluviales, Spacematrix y H/W)",
+        "lbl_read_guide": (
+            "<b>• Exposición (E):</b> Mide población, activos edificados (TAKS/n) y cercanía a fallas activas o arroyos/inundación.<br>"
+            "<b>• Sensibilidad (S):</b> Fragilidad física por edificios en mal estado (%), altura/FSI, medianerías (%) y pendiente (%).<br>"
+            "<b>• Capacidad Adaptativa (AC):</b> Ancho vial, bloqueo por escombros (<b>H/W = 3m×Plantas/Ancho</b>; ≥1.5 bloquea paso), % vías sin salida, acceso a refugios/equipamientos y OSR. <b>Mayor AC reduce la vulnerabilidad.</b><br>"
+            "<b>• Balance Spacematrix &amp; MPYY:</b> FSI, GSI (TAKS), OSR, m² de equipamiento activo por habitante y entropía de usos (0-1)."
+        ),
+        "grp_j": "J. Metodología Integral, Solución MAUP y Manual Paso a Paso",
+        "fld_kullanim": "Uso de Suelo / Edificio",
+        "fld_kat": "Número de Plantas / Altura",
+        "fld_yd": "Orden Constructivo (Adosado/Aislado)",
+        "fld_durum": "Estado Físico Constructivo",
+        "fld_nufus": "Columna de Población / Residentes",
+        "rfld_gen": "Ancho de Vía (Metros)",
+        "rfld_kap": "Tipo de Pavimento / Superficie",
+        "rfld_tur": "Jerarquía / Clase Vial",
+        "lbl_synth_style": "<b>Estilo Cartográfico:</b>",
+        "style_semantic": "Semántico + Trama de Patrones (Lámina Estratégica)",
+        "style_classic": "Categorías HSV Clásicas",
+        "lbl_focus_axis": "<b>Eje Focal:</b>",
+        "chk_synth_group_mask": "Agrupar Capas de Síntesis + Máscara Exterior",
+        "chk_synth_vuln": "Trama de Vulnerabilidad + Marcadores Críticos 'X'",
+        "chk_synth_catchments": "Anillos de Captación, Puntos Calientes y Niveles",
+        "chk_synth_corridors": "Corredores en Red Vial y Accesos Externos",
+        "plate_fmt_a3": "A3 Horizontal",
+        "plate_fmt_a1": "A1 Vertical",
+        "btn_export_plate": "🗺️ Imprimir Lámina de Síntesis (A3/A1)",
+        "btn_export_plate_tip": "Crear diseño de impresión QGIS y exportar Lámina Estratégica (PDF / PNG / QPT)",
+        "swot_hdr": "SÍNTESIS ESTRATÉGICA GZFT / FODA (Basada en Métricas Reales)",
+        "swot_str": "Fortalezas",
+        "swot_weak": "Debilidades",
+        "swot_opp": "Oportunidades",
+        "swot_thr": "Amenazas",
+        "swot_gaps": "Brechas de Datos / Capas Omitidas",
+        "compact_organic": "🌿 Eje Morfológico / Natural (Flujo Orgánico de Valle)",
+        "compact_balanced": "⚖️ Estándar Equilibrado (Norma de Planificación)",
+        "compact_strict": "🎯 Alta Compacidad (Superbloques Convexos / Circulares)",
+        "compact_tip": "El modo orgánico permite que las zonas sigan valles y ejes viales sin penalización de forma.",
+        "how_works": "Cómo Funciona:",
+        "recommended": "Recomendado:",
+        "badge_macro": "🔵 Macrozonas (Grueso)",
+        "badge_district": "🟢 Nivel Distrital (Óptimo)",
+        "badge_neigh": "🟠 Vecindario (Fino)",
+        "badge_micro": "🔴 Micro-Manzana (Muy Fino)",
+        "badge_cap_strict": "🔵 Área Igual Estricta",
+        "badge_cap_bal": "🟢 Tope Equilibrado (Óptimo)",
+        "badge_cap_open": "🟠 Macrozona Abierta",
+        "badge_inactive": "⚪ Inactivo (0%)",
+        "badge_low": "🔵 Bajo Impacto",
+        "badge_bal": "🟢 Equilibrado",
+        "badge_dom": "🟠 Dominante",
+        "msg_saved_title": "Guardado",
+        "msg_saved_quick": "Tabla de resumen rápido guardada:",
+        "msg_saved_full": "Tabla completa de subzonas guardada:",
+        "msg_saved_matrix": "Matriz de seguimiento guardada:",
+        "msg_plate_title": "Lámina de Síntesis Exportada",
+        "msg_plate_saved": "Diseño registrado en el proyecto QGIS y exportado:",
+        "msg_missing_layer": "Capa Faltante",
+        "msg_missing_layer_txt": "Seleccione al menos una capa de Límite del Plan, Red Vial, Manzanas o Edificios.",
+        "msg_error_title": "Error de Análisis",
     },
 }
 
@@ -1101,6 +1579,138 @@ WEIGHT_DETAILS = {
 }
 
 
+_PRESET_I18N_EXTRA = {
+    "integrated_synthesis": {
+        "title_zh": "1) 综合规划与脆弱性合成 (推荐: 未建空地 + 设施可达 + 道路 + 工业聚合)",
+        "short_zh": "1) 综合合成 (推荐)",
+        "desc_zh": "<b>综合规划与脆弱性合成:</b> 主控规划与脆弱性评估的默认多准则策略，分离空地储备与成熟建成区，统筹设施可达性、路网相似性与工业园区完整性。",
+        "title_es": "1) Síntesis Integral de Planificación y Vulnerabilidad (Recomendado: Suelo Vacante + Equipamientos + Vías + Industria)",
+        "short_es": "1) Síntesis Integral (Rec.)",
+        "desc_es": "<b>Síntesis Integral de Planificación y Vulnerabilidad:</b> Estrategia multicriterio predeterminada para separar reservas vacantes, evaluar accesibilidad a equipamientos, redes viales y mantener la cohesión industrial.",
+    },
+    "vacant_plan": {
+        "title_zh": "2) 空地储备与新开发潜力 (未建街区 vs 建成区)",
+        "short_zh": "2) 空地与开发潜力",
+        "desc_zh": "<b>空地与新开发潜力:</b> 最大化区分可进行新规划的未建/稀疏储备街区与需要减灾改造的成熟建成区。",
+        "title_es": "2) Suelo Vacante y Potencial de Desarrollo (Reservas vs. Tejido Consolidado)",
+        "short_es": "2) Suelo Vacante",
+        "desc_es": "<b>Suelo Vacante y Potencial de Desarrollo:</b> Maximiza el contraste entre reservas vacantes candidatas a nuevos planes y barrios consolidados.",
+    },
+    "access_school": {
+        "title_zh": "3) 公共设施可达性与服务均衡",
+        "short_zh": "3) 设施可达性",
+        "desc_zh": "<b>设施与学校可达性:</b> 按学校、医疗和公园步行距离（<500 m / 500–1000 m / >1000 m）聚类邻里分区。",
+        "title_es": "3) Accesibilidad a Equipamientos y Equilibrio de Servicios",
+        "short_es": "3) Accesibilidad",
+        "desc_es": "<b>Accesibilidad a Equipamientos:</b> Agrupa barrios según distancia peatonal a escuelas, centros de salud y parques (<500 m / 500–1000 m / >1000 m).",
+    },
+    "agri_protect": {
+        "title_zh": "4) 农田保护与城乡边缘带管控",
+        "short_zh": "4) 农田与边缘保护",
+        "desc_zh": "<b>农田与乡村边缘保护:</b> 清晰隔离耕地、果园、牧场与城市居住商业街区，凸显农工与农居交界带。",
+        "title_es": "4) Protección Agrícola y Borde Rural",
+        "short_es": "4) Agricultura y Borde",
+        "desc_es": "<b>Protección Agrícola y Borde Rural:</b> Aísla suelos agrícolas, olivares y pastizales de las manzanas urbanas, resaltando bordes agro-industriales.",
+    },
+    "commercial_focus": {
+        "title_zh": "5) 商业核心与混合功能轴线",
+        "short_zh": "5) 商业与混合轴线",
+        "desc_zh": "<b>商业核心与混合轴线:</b> 将相邻商业街区与沿主干道延伸的商住混合廊道聚合为连贯的中心商务子区。",
+        "title_es": "5) Núcleo Comercial y Corredores de Uso Mixto",
+        "short_es": "5) Comercial y Mixto",
+        "desc_es": "<b>Núcleo Comercial y Corredores Mixtos:</b> Agrupa manzanas comerciales y ejes mixtos a lo largo de vías principales en subzonas centrales.",
+    },
+    "industrial_cluster": {
+        "title_zh": "6) 工业集聚与过渡界面 (工居 / 工农边界)",
+        "short_zh": "6) 工业集聚与隔离",
+        "desc_zh": "<b>工业集聚与过渡界面:</b> 防止工业仓储街区碎片化，并在工业邻接居住或农田处划定缓冲过渡区。",
+        "title_es": "6) Cohesión Industrial e Interfaces de Transición",
+        "short_es": "6) Cohesión Industrial",
+        "desc_es": "<b>Cohesión Industrial e Interfaces:</b> Evita la fragmentación de polígonos industriales y delimita zonas de amortiguamiento frente a vivienda o agricultura.",
+    },
+    "organic_corridor": {
+        "title_zh": "7) 形态 / 自然廊道与河谷走向 (有机流动)",
+        "short_zh": "7) 自然廊道 (有机)",
+        "desc_zh": "<b>形态与自然廊道:</b> 适用于沿河谷、断层或线性交通轴线的研究区，启用有机紧凑度以顺应地形延展。",
+        "title_es": "7) Corredor Morfológico / Natural y Orientación de Valle (Orgánico)",
+        "short_es": "7) Corredor Natural",
+        "desc_es": "<b>Corredor Morfológico y Natural:</b> Ideal para valles fluviales, fallas o ejes lineales; activa el modo orgánico sin forzar circularidad.",
+    },
+    "disaster_vuln": {
+        "title_zh": "8) 地震 / 洪涝脆弱性与自然阈值 (断层、河道、坡度、建筑质量)",
+        "short_zh": "8) 灾害脆弱性",
+        "desc_zh": "<b>地震 / 洪涝脆弱性与自然阈值:</b> 优先突出活动断层、河道洪涝走廊、地形坡度、遗产保护与危旧房，强化 E-S-AC 评估。",
+        "title_es": "8) Vulnerabilidad Sísmica / Fluvial y Umbrales Naturales",
+        "short_es": "8) Vulnerabilidad Desastres",
+        "desc_es": "<b>Vulnerabilidad Sísmica / Fluvial:</b> Prioriza cercanía a fallas, cauces, pendiente DEM, patrimonio y estado constructivo para la síntesis E-S-AC.",
+    },
+    "manual_custom": {
+        "title_zh": "9) 均衡标准 / 自定义权重",
+        "short_zh": "9) 均衡 / 自定义",
+        "desc_zh": "<b>均衡标准 / 自定义权重:</b> 从均衡权重出发，可随时手动微调下方全部权重参数。",
+        "title_es": "9) Estándar Equilibrado / Pesos Personalizados",
+        "short_es": "9) Equilibrado / Manual",
+        "desc_es": "<b>Estándar Equilibrado / Personalizado:</b> Parte de pesos equilibrados y permite ajustar manualmente cada coeficiente abajo.",
+    },
+}
+
+for _pr in ZONING_PRESETS:
+    _ex = _PRESET_I18N_EXTRA.get(_pr["code"], {})
+    _pr.update(_ex)
+
+_WEIGHT_ZH_ES = {
+    "p_k": (
+        {"title": "1) 目标子分区数量 (K)", "mech": "最终划分的均质规划分区总数。层次 Ward 聚类持续合并相邻单元直至达到 K 个分区。", "min_val": "2", "min_txt": "粗略划分为 2 个宏观大区，细节抹平。", "max_val": "60", "max_txt": "细分为 60 个微区，接近街区级碎片化。", "rec": "15 – 35 (总体规划推荐 20–30)"},
+        {"title": "1) Número Objetivo de Subzonas (K)", "mech": "Cantidad final de subzonas homogéneas mediante agrupamiento jerárquico de Ward.", "min_val": "2", "min_txt": "Divide en solo 2 macrozonas gruesas.", "max_val": "60", "max_txt": "Produce 60 microgrupos muy fragmentados.", "rec": "15 – 35 (Ideal 20–30 para planes maestros)"},
+    ),
+    "p_lu": (
+        {"title": "2) 用地性质与细分权重", "mech": "按居住密度、商业、工业、农田、设施及墓地比例分离街区。", "min_val": "0.0", "min_txt": "忽略用地性质差异。", "max_val": "5.0", "max_txt": "不同用地类型严格隔离。", "rec": "1.8 – 3.0 (默认: 2.2)"},
+        {"title": "2) Peso de Uso del Suelo y Subtipos", "mech": "Separa usos residenciales, comerciales, industriales, agrícolas, cementerios y equipamientos.", "min_val": "0.0", "min_txt": "Ignora el uso del suelo.", "max_val": "5.0", "max_txt": "Aísla estrictamente usos distintos.", "rec": "1.8 – 3.0 (Predet.: 2.2)"},
+    ),
+    "p_yapi": (
+        {"title": "3) 建筑形态、TAKS 与密度权重", "mech": "综合平均层数、建筑密度 (TAKS)、排列形式及危旧房比例。", "min_val": "0.0", "min_txt": "忽略层高与建筑密度差异。", "max_val": "5.0", "max_txt": "微小建筑形态差异即触发分区。", "rec": "2.0 – 3.2 (默认: 2.4)"},
+        {"title": "3) Peso de Tipología, TAKS y Densidad", "mech": "Separa manzanas según alturas, ocupación (TAKS), orden constructivo y deterioro.", "min_val": "0.0", "min_txt": "Ignora alturas y ocupación.", "max_val": "5.0", "max_txt": "Máxima pureza morfológica.", "rec": "2.0 – 3.2 (Predet.: 2.4)"},
+    ),
+    "p_dogal": (
+        {"title": "4) 自然阈值与保护权重", "mech": "将河道、陡坡、断层及历史/洪涝风险区作为自然边界隔离。", "min_val": "0.0", "min_txt": "忽略地形与自然灾害约束。", "max_val": "5.0", "max_txt": "灾害与自然阈值构成硬边界。", "rec": "1.5 – 3.5 (默认: 1.6)"},
+        {"title": "4) Peso de Umbrales Naturales y Protección", "mech": "Aísla márgenes fluviales, pendientes DEM, fallas activas y áreas de riesgo o patrimonio.", "min_val": "0.0", "min_txt": "Ignora amenazas naturales.", "max_val": "5.0", "max_txt": "Las restricciones naturales son barreras estrictas.", "rec": "1.5 – 3.5 (Predet.: 1.6)"},
+    ),
+    "p_geo": (
+        {"title": "5) 空间紧凑度与形态权重", "mech": "控制空间邻接与边界周长比，保持图形规整紧凑。", "min_val": "0.0", "min_txt": "关闭紧凑度惩罚，允许自由延展。", "max_val": "5.0", "max_txt": "强制形成近似圆形/方形超级街区。", "rec": "1.5 – 3.0 (默认: 2.5)"},
+        {"title": "5) Peso de Compacidad Espacial y Forma", "mech": "Controla continuidad espacial y compacidad geométrica evitando tiras irregulares.", "min_val": "0.0", "min_txt": "Sin penalización de forma.", "max_val": "5.0", "max_txt": "Fuerza superbloques convexos.", "rec": "1.5 – 3.0 (Predet.: 2.5)"},
+    ),
+    "p_cap": (
+        {"title": "6) 宏观聚合与面积上限倍率", "mech": "控制最大子分区面积，防止大型工业区与连片农田被切碎。", "min_val": "1.5", "min_txt": "强制等面积切分大型区域。", "max_val": "20.0", "max_txt": "放宽上限以保持连片区完整。", "rec": "3.5 – 5.5 (默认: 4.0)"},
+        {"title": "6) Tope de Área y Cohesión de Macrozonas", "mech": "Limita el tamaño máximo relativo para evitar dividir grandes polígonos industriales o agrícolas.", "min_val": "1.5", "min_txt": "Fuerza áreas casi iguales.", "max_val": "20.0", "max_txt": "Relaja el tope para distritos extensos.", "rec": "3.5 – 5.5 (Predet.: 4.0)"},
+    ),
+    "p_bos": (
+        {"title": "7) 未建空地与新规划潜力权重", "mech": "分离街区未建储备土地比例与高密度建成区。", "min_val": "0.0", "min_txt": "忽略空置率差异。", "max_val": "5.0", "max_txt": "锐利区分未建储备区与建成区。", "rec": "2.0 – 3.5 (默认: 2.8)"},
+        {"title": "7) Peso de Suelo Vacante y Potencial", "mech": "Mide parcelas vacantes separando reservas de desarrollo del tejido maduro.", "min_val": "0.0", "min_txt": "Ignora proporción vacante.", "max_val": "5.0", "max_txt": "Máxima separación entre reservas y tejido consolidado.", "rec": "2.0 – 3.5 (Predet.: 2.8)"},
+    ),
+    "p_erisim": (
+        {"title": "8) 设施可达性权重", "mech": "依据 MPYY 500m/1000m 服务半径评估学校、公园与医疗步行可达性。", "min_val": "0.0", "min_txt": "忽略设施距离。", "max_val": "5.0", "max_txt": "服务圈半径严格决定分区边界。", "rec": "1.8 – 3.0 (默认: 2.4)"},
+        {"title": "8) Peso de Accesibilidad a Equipamientos", "mech": "Evalúa distancia peatonal a escuelas, parques y salud según radios MPYY 500m/1000m.", "min_val": "0.0", "min_txt": "Ignora distancias peatonales.", "max_val": "5.0", "max_txt": "Los radios de servicio dictan los límites.", "rec": "1.8 – 3.0 (Predet.: 2.4)"},
+    ),
+    "p_yol": (
+        {"title": "9) 路网等级与相似性权重", "mech": "聚合路宽、铺装类型与道路等级相近的相邻街区。", "min_val": "0.0", "min_txt": "路宽和路面不影响分区。", "max_val": "5.0", "max_txt": "主干道与路面变化即形成边界。", "rec": "1.5 – 3.0 (默认: 2.2)"},
+        {"title": "9) Peso de Jerarquía y Similitud Vial", "mech": "Agrupa manzanas vecinas con ancho vial, pavimento y jerarquía similares.", "min_val": "0.0", "min_txt": "Sin influencia vial.", "max_val": "5.0", "max_txt": "Avenidas y cambios de pavimento dividen zonas.", "rec": "1.5 – 3.0 (Predet.: 2.2)"},
+    ),
+    "p_odak": (
+        {"title": "10) 工业区 (OIZ) 聚合与隔离", "mech": "保持工业仓储区整体紧凑并严格隔离其对居住区的渗透。", "min_val": "0.0", "min_txt": "工业街区可能混入居住或农田。", "max_val": "5.0", "max_txt": "工业区完全锁定并与居住隔离。", "rec": "2.0 – 3.5 (默认: 2.5)"},
+        {"title": "10) Cohesión y Aislamiento Industrial (OIZ)", "mech": "Evita intrusión industrial en vivienda formando bloques industriales compactos.", "min_val": "0.0", "min_txt": "La industria puede mezclarse con vivienda.", "max_val": "5.0", "max_txt": "Bloques industriales estrictamente aislados.", "rec": "2.0 – 3.5 (Predet.: 2.5)"},
+    ),
+    "p_grid": (
+        {"title": "11) 备用网格尺寸 (m)", "mech": "仅在未提供道路网络图层时使用的默认网格单元宽度。", "min_val": "50m", "min_txt": "超细网格，细节高但耗时更长。", "max_val": "2000m", "max_txt": "粗糙宏观网格，运算极快。", "rec": "100m – 300m (默认: 200 m)"},
+        {"title": "11) Tamaño de Malla de Respaldo (m)", "mech": "Ancho de celda predeterminado solo cuando falta capa de red vial.", "min_val": "50m", "min_txt": "Microceldas muy finas.", "max_val": "2000m", "max_txt": "Macroceldas gruesas de 2 km.", "rec": "100m – 300m (Predet.: 200 m)"},
+    ),
+}
+
+for _wk, (_zh_d, _es_d) in _WEIGHT_ZH_ES.items():
+    if _wk in WEIGHT_DETAILS:
+        WEIGHT_DETAILS[_wk]["zh"] = _zh_d
+        WEIGHT_DETAILS[_wk]["es"] = _es_d
+
+
 class BolgelemeDialog(QDialog):
     def __init__(self, iface, parent=None):
         super().__init__(parent)
@@ -1116,12 +1726,16 @@ class BolgelemeDialog(QDialog):
         if WindowMaximizeButtonHint:
             flags |= WindowMaximizeButtonHint
         self.setWindowFlags(flags)
-        self.setMinimumSize(780, 500)
+        self.setMinimumSize(860, 560)
         self.setStyleSheet(STYLE)
         self.records = []
         self.quick_records = []
         self._pipeline_logs = []
         self.last_zones = []
+        self.last_res = None
+        self.last_P = None
+        self.last_swot = None
+        self.last_layer_ids = []
         self.current_lang = "en"
         self._sample_cache = {}
         self.build_ui()
@@ -1135,16 +1749,18 @@ class BolgelemeDialog(QDialog):
                 screen = self.iface.mainWindow().screen()
             if screen:
                 avail = screen.availableGeometry()
-                w = min(920, int(avail.width() * 0.78))
-                h = min(680, int(avail.height() * 0.78))
-                self.resize(max(780, w), max(500, h))
+                max_w = max(860, avail.width() - 32)
+                max_h = max(560, avail.height() - 32)
+                w = min(1040, max_w, max(860, int(avail.width() * 0.80)))
+                h = min(740, max_h, max(560, int(avail.height() * 0.80)))
+                self.resize(w, h)
                 x = avail.x() + (avail.width() - self.width()) // 2
                 y = avail.y() + (avail.height() - self.height()) // 2
                 self.move(max(avail.x(), x), max(avail.y() + 10, y))
             else:
-                self.resize(880, 620)
+                self.resize(980, 680)
         except (AttributeError, RuntimeError):
-            self.resize(880, 620)
+            self.resize(980, 680)
 
     # ------------------------------------------------------------ arayüz
     def build_ui(self):
@@ -1328,29 +1944,29 @@ class BolgelemeDialog(QDialog):
             self.cmb_mode.setItemText(1, g("mode_adv"))
             self.cmb_mode.blockSignals(False)
         if hasattr(self, "btn_help"):
-            self.btn_help.setText(g("btn_help"))
+            self.btn_help.setText(_escape_qt_amp(g("btn_help")))
         if hasattr(self, "tabs"):
             for idx, key in enumerate(("tab_1", "tab_2", "tab_3", "tab_4", "tab_5", "tab_6")):
                 if idx < self.tabs.count():
-                    self.tabs.setTabText(idx, g(key))
+                    self.tabs.setTabText(idx, _escape_qt_amp(g(key)))
         if hasattr(self, "btn_quick_csv"):
-            self.btn_quick_csv.setText(g("btn_quick_csv"))
+            self.btn_quick_csv.setText(_escape_qt_amp(g("btn_quick_csv")))
         if hasattr(self, "btn_csv"):
-            self.btn_csv.setText(g("btn_csv"))
+            self.btn_csv.setText(_escape_qt_amp(g("btn_csv")))
         if hasattr(self, "btn_matrix"):
-            self.btn_matrix.setText(g("btn_matrix"))
+            self.btn_matrix.setText(_escape_qt_amp(g("btn_matrix")))
         if hasattr(self, "lbl_view_mode"):
             self.lbl_view_mode.setText(f"<b>{g('view_lbl')}</b>")
         if hasattr(self, "rb_view_quick"):
-            self.rb_view_quick.setText(g("rb_quick"))
+            self.rb_view_quick.setText(_escape_qt_amp(g("rb_quick")))
         if hasattr(self, "rb_view_both"):
-            self.rb_view_both.setText(g("rb_both"))
+            self.rb_view_both.setText(_escape_qt_amp(g("rb_both")))
         if hasattr(self, "rb_view_detailed"):
-            self.rb_view_detailed.setText(g("rb_detailed"))
+            self.rb_view_detailed.setText(_escape_qt_amp(g("rb_detailed")))
         if hasattr(self, "txt_filter"):
             self.txt_filter.setPlaceholderText(g("filter_ph"))
         if hasattr(self, "chk_quick_layer"):
-            self.chk_quick_layer.setText(g("chk_quick_layer"))
+            self.chk_quick_layer.setText(_escape_qt_amp(g("chk_quick_layer")))
 
         # Sekme 1, 2, 3, 4, 5 iç grup kutuları, etiketler ve parametre kartları
         for attr_name, key in (
@@ -1366,7 +1982,12 @@ class BolgelemeDialog(QDialog):
             ("grp_preset", "grp_preset"), ("lbl_preset_sel", "lbl_preset_sel"),
             ("grp_g", "grp_g"),
             ("grp_h", "grp_h"), ("chk_filter_medians", "chk_medians"), ("chk_excel", "chk_excel"),
-            ("chk_cells", "chk_cells"), ("grp_i", "grp_i"), ("lbl_about_top", "lbl_about_top"),
+            ("chk_cells", "chk_cells"),
+            ("lbl_synth_style", "lbl_synth_style"), ("lbl_focus_axis", "lbl_focus_axis"),
+            ("chk_synth_group_mask", "chk_synth_group_mask"), ("chk_synth_vuln", "chk_synth_vuln"),
+            ("chk_synth_catchments", "chk_synth_catchments"), ("chk_synth_corridors", "chk_synth_corridors"),
+            ("btn_export_plate", "btn_export_plate"), ("btn_cz_export_plate", "btn_export_plate"),
+            ("grp_i", "grp_i"), ("lbl_about_top", "lbl_about_top"),
             ("btn_browser", "btn_browser"), ("grp_read_guide", "grp_read_guide"), ("lbl_read_guide", "lbl_read_guide"),
             ("grp_j", "grp_j"),
             ("grp_cz", "grp_cz"), ("lbl_cz_info", "lbl_cz_info"), ("lbl_cz_lyr", "lbl_cz_lyr"),
@@ -1376,33 +1997,62 @@ class BolgelemeDialog(QDialog):
             w_obj = getattr(self, attr_name, None)
             if w_obj is not None and g(key):
                 if isinstance(w_obj, QGroupBox):
-                    w_obj.setTitle(g(key))
+                    w_obj.setTitle(_escape_qt_amp(g(key)))
+                elif isinstance(w_obj, (QPushButton, QCheckBox, QRadioButton)):
+                    w_obj.setText(_escape_qt_amp(g(key)))
                 else:
                     w_obj.setText(g(key))
 
+        for btn_pl in (getattr(self, "btn_export_plate", None), getattr(self, "btn_cz_export_plate", None)):
+            if btn_pl is not None and g("btn_export_plate_tip"):
+                btn_pl.setToolTip(g("btn_export_plate_tip"))
+
+        for cmb_pf in (getattr(self, "cmb_plate_fmt", None), getattr(self, "cmb_cz_plate_fmt", None)):
+            if cmb_pf is not None and cmb_pf.count() >= 2:
+                cmb_pf.blockSignals(True)
+                cmb_pf.setItemText(0, g("plate_fmt_a3"))
+                cmb_pf.setItemText(1, g("plate_fmt_a1"))
+                cmb_pf.blockSignals(False)
+
+        if hasattr(self, "cmb_synth_style") and self.cmb_synth_style.count() >= 2:
+            self.cmb_synth_style.blockSignals(True)
+            self.cmb_synth_style.setItemText(0, g("style_semantic"))
+            self.cmb_synth_style.setItemText(1, g("style_classic"))
+            self.cmb_synth_style.blockSignals(False)
+
+        if hasattr(self, "cmb_focus_axis"):
+            axes = pafta_sentez.SYNTHESIS_FOCUS_AXES if (pafta_sentez and hasattr(pafta_sentez, "SYNTHESIS_FOCUS_AXES")) else _FALLBACK_FOCUS_AXES
+            ax_idx_map = {"en": 1, "tr": 2, "zh": 3, "es": 4}
+            ax_col = ax_idx_map.get(lang_code, 1)
+            cur_ax = self.cmb_focus_axis.currentData() or "balanced"
+            self.cmb_focus_axis.blockSignals(True)
+            for idx_ax, ax_tuple in enumerate(axes):
+                if idx_ax < self.cmb_focus_axis.count():
+                    lbl_ax = ax_tuple[ax_col] if len(ax_tuple) > ax_col else ax_tuple[1]
+                    self.cmb_focus_axis.setItemText(idx_ax, lbl_ax)
+            idx_sel_ax = self.cmb_focus_axis.findData(cur_ax)
+            if idx_sel_ax >= 0:
+                self.cmb_focus_axis.setCurrentIndex(idx_sel_ax)
+            self.cmb_focus_axis.blockSignals(False)
+
         if hasattr(self, "cmb_preset"):
-            is_tr = (lang_code == "tr")
             self.cmb_preset.blockSignals(True)
             for idx_p, pr in enumerate(ZONING_PRESETS):
-                self.cmb_preset.setItemText(idx_p, pr["title_tr"] if is_tr else pr["title_en"])
+                self.cmb_preset.setItemText(idx_p, pr.get(f"title_{lang_code}", pr["title_en"]))
             self.cmb_preset.blockSignals(False)
             if hasattr(self, "_preset_quick_btns"):
                 for btn_p, pr in self._preset_quick_btns:
-                    btn_p.setText(pr["short_tr"] if is_tr else pr["short_en"])
+                    btn_p.setText(_escape_qt_amp(pr.get(f"short_{lang_code}", pr["short_en"])))
             self._update_preset_description_only()
 
         if hasattr(self, "cmb_compactness_mode"):
             cur_cm = self.cmb_compactness_mode.currentData() or "balanced"
             self.cmb_compactness_mode.blockSignals(True)
             self.cmb_compactness_mode.clear()
-            if is_tr:
-                self.cmb_compactness_mode.addItem("🌿 Morfolojik / Doğal Eksen (Vadi & Koridor Serbestliği)", "organic")
-                self.cmb_compactness_mode.addItem("⚖️ Dengeli Standart (Planlama Normu)", "balanced")
-                self.cmb_compactness_mode.addItem("🎯 Yüksek Kompaktlık (Dairesel / Dörtgen Süperbloklar)", "strict")
-            else:
-                self.cmb_compactness_mode.addItem("🌿 Morphological / Natural Axis (Organic Valley Flow)", "organic")
-                self.cmb_compactness_mode.addItem("⚖️ Balanced Standard (Planning Norm)", "balanced")
-                self.cmb_compactness_mode.addItem("🎯 High Compactness (Convex / Circular Superblocks)", "strict")
+            self.cmb_compactness_mode.addItem(g("compact_organic"), "organic")
+            self.cmb_compactness_mode.addItem(g("compact_balanced"), "balanced")
+            self.cmb_compactness_mode.addItem(g("compact_strict"), "strict")
+            self.cmb_compactness_mode.setToolTip(g("compact_tip"))
             idx_cm = self.cmb_compactness_mode.findData(cur_cm)
             if idx_cm >= 0:
                 self.cmb_compactness_mode.setCurrentIndex(idx_cm)
@@ -1413,13 +2063,13 @@ class BolgelemeDialog(QDialog):
         if hasattr(self, "_advanced_cards"):
             for k_prefix, c_data in self._advanced_cards.items():
                 det = c_data["details"]
-                d_lang = det["tr"] if is_tr else det["en"]
+                d_lang = det.get(lang_code, det["en"])
                 c_data["title_label"].setText(f"<b>{d_lang['title']}</b>")
-                how_txt = f"<b>{('Çalışma Mantığı:' if is_tr else 'How it Works:')}</b> {d_lang['mech']}"
+                how_txt = f"<b>{g('how_works')}</b> {d_lang['mech']}"
                 ext_txt = (
                     f"<b>Min ({d_lang['min_val']}):</b> {d_lang['min_txt']}  •  "
-                    f"<b>Maks ({d_lang['max_val']}):</b> {d_lang['max_txt']}<br/>"
-                    f"<b>{('Önerilen:' if is_tr else 'Recommended:')}</b> <span style='color: #0369a1;'>{d_lang['rec']}</span>"
+                    f"<b>Max ({d_lang['max_val']}):</b> {d_lang['max_txt']}<br/>"
+                    f"<b>{g('recommended')}</b> <span style='color: #0369a1;'>{d_lang['rec']}</span>"
                 )
                 c_data["how_label"].setText(how_txt)
                 c_data["extremes_label"].setText(ext_txt)
@@ -1428,6 +2078,16 @@ class BolgelemeDialog(QDialog):
 
         if hasattr(self, "tbl"):
             self.tbl.setHorizontalHeaderLabels([g("tbl_col_0"), g("tbl_col_1"), g("tbl_col_2")])
+            for row_i in range(self.tbl.rowCount()):
+                cmb_role = self.tbl.cellWidget(row_i, 1)
+                if isinstance(cmb_role, QComboBox):
+                    cmb_role.blockSignals(True)
+                    for item_i in range(cmb_role.count()):
+                        r_code = cmb_role.itemData(item_i)
+                        lbl_map = ROLE_LABELS_I18N.get(r_code)
+                        if lbl_map:
+                            cmb_role.setItemText(item_i, lbl_map.get(lang_code, lbl_map["en"]))
+                    cmb_role.blockSignals(False)
 
         if hasattr(self, "_param_card_labels"):
             for k_prefix, (lbl_t, lbl_d) in self._param_card_labels.items():
@@ -1463,9 +2123,9 @@ class BolgelemeDialog(QDialog):
                     "padding: 5px 8px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.4);"
                 )
             if hasattr(self, "btn_run"):
-                self.btn_run.setText(f"{tr['btn_run_adv']} (M1..M{k_val})")
+                self.btn_run.setText(_escape_qt_amp(f"{tr['btn_run_adv']} (M1..M{k_val})"))
             if hasattr(self, "btn_top_run"):
-                self.btn_top_run.setText(tr["btn_top_adv"])
+                self.btn_top_run.setText(_escape_qt_amp(tr["btn_top_adv"]))
             if hasattr(self, "btn_matrix"):
                 self.btn_matrix.setVisible(True)
         else:
@@ -1476,9 +2136,9 @@ class BolgelemeDialog(QDialog):
                     "padding: 5px 8px; border-radius: 4px; border: 1px solid rgba(34, 197, 94, 0.4);"
                 )
             if hasattr(self, "btn_run"):
-                self.btn_run.setText(f"{tr['btn_run_std']} (A1..A{k_val})")
+                self.btn_run.setText(_escape_qt_amp(f"{tr['btn_run_std']} (A1..A{k_val})"))
             if hasattr(self, "btn_top_run"):
-                self.btn_top_run.setText(tr["btn_top_std"])
+                self.btn_top_run.setText(_escape_qt_amp(tr["btn_top_std"]))
             if hasattr(self, "btn_matrix"):
                 self.btn_matrix.setVisible(False)
 
@@ -1758,14 +2418,16 @@ class BolgelemeDialog(QDialog):
     def add_extra(self, name_text=None, role_code=None, layer_obj=None):
         row = self.tbl.rowCount()
         self.tbl.insertRow(row)
+        lang_code = getattr(self, "current_lang", "en")
         role = QComboBox()
         for label, code, _ in analiz.ROLES:
-            role.addItem(label, code)
+            loc_lbl = ROLE_LABELS_I18N.get(code, {}).get(lang_code, label)
+            role.addItem(loc_lbl, code)
         if role_code:
             idx = role.findData(role_code)
             if idx >= 0:
                 role.setCurrentIndex(idx)
-        self.tbl.setItem(row, 0, QTableWidgetItem(name_text or f"Katman_{row + 1}"))
+        self.tbl.setItem(row, 0, QTableWidgetItem(name_text or f"Layer_{row + 1}"))
         self.tbl.setCellWidget(row, 1, role)
         cmb = QgsMapLayerComboBox()
         cmb.setFilters(QgsMapLayerProxyModel.Filter.VectorLayer)
@@ -1786,11 +2448,12 @@ class BolgelemeDialog(QDialog):
         bnd_cand, road_cand, blk_cand, bldg_cand = None, None, None, None
         for lyr in proj_layers:
             nm = alg.norm_tr(lyr.name())
-            # Donatıları, yapıları, adaları, yolları, itfaiyeyi ve kırılganlık parçalarını doğal eşiklerden kesinlikle hariç tut
+            # Donatıları, yapıları, adaları, yolları, itfaiyeyi, sentez çıktılarımı ve kırılganlık parçalarını ana katmanlardan hariç tut
             if any(x in nm for x in (
-                "alt_bolge", "hucre", "imar_adasi_hucre", "itfaye", "itfaiye",
-                "kirilganlik_parca", "kirilganlik", "yapi", "bina", "ada", "yol",
-                "park", "asm", "saglik", "okul", "egitim", "cami", "donati"
+                *_DERIVED_LAYER_PATTERNS,
+                "itfaye", "itfaiye", "kirilganlik_parca", "kirilganlik",
+                "park", "asm", "saglik", "okul", "egitim", "cami", "donati",
+                "toplanma", "ulasim_odak", "odak", "isi_adasi", "fay", "dere", "taskin"
             )):
                 continue
             if isinstance(lyr, QgsVectorLayer):
@@ -1838,11 +2501,12 @@ class BolgelemeDialog(QDialog):
             if w and w.currentLayer():
                 existing_layers.add(w.currentLayer().id())
 
+        lang_code = getattr(self, "current_lang", "en")
         for lyr in proj_layers:
             if lyr in used_main or lyr is None:
                 continue
             nm = alg.norm_tr(lyr.name())
-            if any(x in nm for x in ("alt_bolge", "hucre", "imar_adasi_hucre")):
+            if any(x in nm for x in _DERIVED_LAYER_PATTERNS):
                 continue
 
             if isinstance(lyr, QgsRasterLayer):
@@ -1855,7 +2519,8 @@ class BolgelemeDialog(QDialog):
             if isinstance(lyr, QgsVectorLayer) and lyr.id() not in existing_layers:
                 for role_code, role_title, kws in NATURAL_LAYER_RULES:
                     if any(kw in nm for kw in kws):
-                        self.add_extra(name_text=f"{role_title} ({lyr.name()})", role_code=role_code, layer_obj=lyr)
+                        loc_title = ROLE_SHORT_I18N.get(role_code, {}).get(lang_code, role_title)
+                        self.add_extra(name_text=f"{loc_title} ({lyr.name()})", role_code=role_code, layer_obj=lyr)
                         existing_layers.add(lyr.id())
                         break
 
@@ -2042,8 +2707,8 @@ class BolgelemeDialog(QDialog):
             return
         idx = max(0, self.cmb_preset.currentIndex())
         pr = ZONING_PRESETS[idx]
-        is_tr = (getattr(self, "current_lang", "en") == "tr")
-        self.lbl_preset_desc.setText(pr["desc_tr"] if is_tr else pr["desc_en"])
+        lang_code = getattr(self, "current_lang", "en")
+        self.lbl_preset_desc.setText(pr.get(f"desc_{lang_code}", pr["desc_en"]))
         active_code = pr["code"]
         if hasattr(self, "_preset_quick_btns"):
             for btn_p, pr_item in self._preset_quick_btns:
@@ -2188,8 +2853,10 @@ class BolgelemeDialog(QDialog):
             cl.setSpacing(6)
 
             det = WEIGHT_DETAILS[key_prefix]
-            is_tr = (getattr(self, "current_lang", "en") == "tr")
-            d_lang = det["tr"] if is_tr else det["en"]
+            lang_cur = getattr(self, "current_lang", "en")
+            tr_cur = UI_TRANSLATIONS.get(lang_cur, UI_TRANSLATIONS["en"])
+            fb_cur = UI_TRANSLATIONS["en"]
+            d_lang = det.get(lang_cur, det["en"])
 
             # Header: Title + Dynamic Badge
             top_row = QHBoxLayout()
@@ -2216,21 +2883,25 @@ class BolgelemeDialog(QDialog):
                 cl.addWidget(cmb_extra)
 
             def update_badge():
-                is_tr_cur = (getattr(self, "current_lang", "en") == "tr")
+                lc = getattr(self, "current_lang", "en")
+                t_b = UI_TRANSLATIONS.get(lc, UI_TRANSLATIONS["en"])
+                f_b = UI_TRANSLATIONS["en"]
+                def gb(kb):
+                    return t_b.get(kb, f_b.get(kb, ""))
                 v = float(spinbox.value())
                 if is_int:
                     if key_prefix == "p_k":
                         if v <= 8:
-                            txt = "🔵 Makro Bölge (Kaba)" if is_tr_cur else "🔵 Macro Zones (Coarse)"
+                            txt = gb("badge_macro")
                             bg, fg, bc = "#e0f2fe", "#0369a1", "#7dd3fc"
                         elif v <= 25:
-                            txt = "🟢 Semt / Doku (Önerilen)" if is_tr_cur else "🟢 District Level (Optimal)"
+                            txt = gb("badge_district")
                             bg, fg, bc = "#dcfce7", "#15803d", "#86efac"
                         elif v <= 40:
-                            txt = "🟠 Mahalle / Detay" if is_tr_cur else "🟠 Neighborhood (Fine)"
+                            txt = gb("badge_neigh")
                             bg, fg, bc = "#ffedd5", "#c2410c", "#fdba74"
                         else:
-                            txt = "🔴 Mikro-Ada (Aşırı Detay)" if is_tr_cur else "🔴 Micro-Block (Very Fine)"
+                            txt = gb("badge_micro")
                             bg, fg, bc = "#fee2e2", "#b91c1c", "#fca5a5"
                     elif key_prefix == "p_grid":
                         txt = f"{int(v)} m"
@@ -2241,26 +2912,26 @@ class BolgelemeDialog(QDialog):
                 else:
                     if key_prefix == "p_cap":
                         if v <= 2.0:
-                            txt = "🔵 Katı Eşit Alan (Bölünme Riski)" if is_tr_cur else "🔵 Strict Equal Area"
+                            txt = gb("badge_cap_strict")
                             bg, fg, bc = "#e0f2fe", "#0369a1", "#7dd3fc"
                         elif v <= 5.0:
-                            txt = "🟢 Dengeli Tavan (Önerilen)" if is_tr_cur else "🟢 Balanced Cap (Optimal)"
+                            txt = gb("badge_cap_bal")
                             bg, fg, bc = "#dcfce7", "#15803d", "#86efac"
                         else:
-                            txt = "🟠 Geniş / Serbest Makro-Bölge" if is_tr_cur else "🟠 Open Macro-Zone"
+                            txt = gb("badge_cap_open")
                             bg, fg, bc = "#ffedd5", "#c2410c", "#fdba74"
                     else:
                         if v <= 0.05:
-                            txt = "⚪ Etkisiz (%0)" if is_tr_cur else "⚪ Inactive (0%)"
+                            txt = gb("badge_inactive")
                             bg, fg, bc = "#f1f5f9", "#64748b", "#cbd5e1"
                         elif v <= 1.5:
-                            txt = f"🔵 Düşük Etki ({v:.1f})" if is_tr_cur else f"🔵 Low Impact ({v:.1f})"
+                            txt = f"{gb('badge_low')} ({v:.1f})"
                             bg, fg, bc = "#e0f2fe", "#0369a1", "#7dd3fc"
                         elif v <= 3.2:
-                            txt = f"🟢 Dengeli / Standart ({v:.1f})" if is_tr_cur else f"🟢 Balanced ({v:.1f})"
+                            txt = f"{gb('badge_bal')} ({v:.1f})"
                             bg, fg, bc = "#dcfce7", "#15803d", "#86efac"
                         else:
-                            txt = f"🟠 Yüksek / Baskın ({v:.1f})" if is_tr_cur else f"🟠 Dominant ({v:.1f})"
+                            txt = f"{gb('badge_dom')} ({v:.1f})"
                             bg, fg, bc = "#ffedd5", "#c2410c", "#fdba74"
 
                 lbl_badge.setText(txt)
@@ -2303,14 +2974,14 @@ class BolgelemeDialog(QDialog):
             v_info.setContentsMargins(6, 4, 6, 4)
             v_info.setSpacing(3)
 
-            lbl_how = QLabel(f"<b>{('Çalışma Mantığı:' if is_tr else 'How it Works:')}</b> {d_lang['mech']}")
+            lbl_how = QLabel(f"<b>{tr_cur.get('how_works', fb_cur['how_works'])}</b> {d_lang['mech']}")
             lbl_how.setWordWrap(True)
             lbl_how.setStyleSheet("border: none; background: transparent; color: #334155; font-size: 11px;")
 
             ext_str = (
                 f"<b>Min ({d_lang['min_val']}):</b> {d_lang['min_txt']}  •  "
-                f"<b>Maks ({d_lang['max_val']}):</b> {d_lang['max_txt']}<br/>"
-                f"<b>{('Önerilen:' if is_tr else 'Recommended:')}</b> <span style='color: #0369a1;'>{d_lang['rec']}</span>"
+                f"<b>Max ({d_lang['max_val']}):</b> {d_lang['max_txt']}<br/>"
+                f"<b>{tr_cur.get('recommended', fb_cur['recommended'])}</b> <span style='color: #0369a1;'>{d_lang['rec']}</span>"
             )
             lbl_extremes = QLabel(ext_str)
             lbl_extremes.setWordWrap(True)
@@ -2368,6 +3039,53 @@ class BolgelemeDialog(QDialog):
         v_opts.addWidget(self.chk_quick_layer)
         v_opts.addWidget(self.chk_cells)
 
+        # Compact 2-line Strategy Synthesis Plate options
+        synth_row = QGridLayout()
+        synth_row.setHorizontalSpacing(10)
+        synth_row.setVerticalSpacing(4)
+        self.lbl_synth_style = QLabel("<b>Cartographic Style:</b>")
+        self.cmb_synth_style = QComboBox()
+        self.cmb_synth_style.addItem("Semantic + Pattern Hatching (Strategy Plate)", "semantic_hatch")
+        self.cmb_synth_style.addItem("Classic HSV Categories", "classic_hsv")
+        self.cmb_synth_style.setCurrentIndex(0)
+        self.cmb_synth_style.setSizePolicy(PolicyExpanding, PolicyFixed)
+
+        self.lbl_focus_axis = QLabel("<b>Focus Axis:</b>")
+        self.cmb_focus_axis = QComboBox()
+        _axes = pafta_sentez.SYNTHESIS_FOCUS_AXES if (pafta_sentez and hasattr(pafta_sentez, "SYNTHESIS_FOCUS_AXES")) else _FALLBACK_FOCUS_AXES
+        for ax_item in _axes:
+            self.cmb_focus_axis.addItem(ax_item[1], ax_item[0])
+        self.cmb_focus_axis.setCurrentIndex(0)
+        self.cmb_focus_axis.setSizePolicy(PolicyExpanding, PolicyFixed)
+
+        synth_row.addWidget(self.lbl_synth_style, 0, 0)
+        synth_row.addWidget(self.cmb_synth_style, 0, 1)
+        synth_row.addWidget(self.lbl_focus_axis, 0, 2)
+        synth_row.addWidget(self.cmb_focus_axis, 0, 3)
+        synth_row.setColumnStretch(1, 1)
+        synth_row.setColumnStretch(3, 1)
+        v_opts.addLayout(synth_row)
+
+        synth_grid = QGridLayout()
+        synth_grid.setHorizontalSpacing(14)
+        synth_grid.setVerticalSpacing(2)
+        self.chk_synth_group_mask = QCheckBox("Group Synthesis Layer Stack + Exterior Mask")
+        self.chk_synth_group_mask.setChecked(True)
+        self.chk_synth_vuln = QCheckBox("Vulnerability Hatch + Critical 'X' Markers")
+        self.chk_synth_vuln.setChecked(True)
+        self.chk_synth_catchments = QCheckBox("Catchment Rings, Hotspots && Focus Tiers")
+        self.chk_synth_catchments.setChecked(False)
+        self.chk_synth_corridors = QCheckBox("Network-Grounded Corridors && Gateways")
+        self.chk_synth_corridors.setChecked(False)
+
+        synth_grid.addWidget(self.chk_synth_group_mask, 0, 0)
+        synth_grid.addWidget(self.chk_synth_vuln, 0, 1)
+        synth_grid.addWidget(self.chk_synth_catchments, 1, 0)
+        synth_grid.addWidget(self.chk_synth_corridors, 1, 1)
+        synth_grid.setColumnStretch(0, 1)
+        synth_grid.setColumnStretch(1, 1)
+        v_opts.addLayout(synth_grid)
+
         lay.addWidget(self.grp_h)
         lay.addStretch()
         return w
@@ -2423,6 +3141,20 @@ class BolgelemeDialog(QDialog):
         )
         self.txt_filter.textChanged.connect(self.refresh_report_view)
         row_filter.addWidget(self.txt_filter, 1)
+
+        self.cmb_plate_fmt = QComboBox()
+        self.cmb_plate_fmt.addItem("A3 Landscape", "A3_LANDSCAPE")
+        self.cmb_plate_fmt.addItem("A1 Portrait", "A1_PORTRAIT")
+        self.cmb_plate_fmt.setMaximumWidth(135)
+        self.btn_export_plate = QPushButton("🗺️ Print Strategy Synthesis Plate (A3/A1)")
+        self.btn_export_plate.setObjectName("exportBtn")
+        if PointingHandCursor is not None:
+            self.btn_export_plate.setCursor(PointingHandCursor)
+        self.btn_export_plate.setEnabled(False)
+        self.btn_export_plate.clicked.connect(lambda _: self.export_plate())
+        row_filter.addWidget(self.cmb_plate_fmt)
+        row_filter.addWidget(self.btn_export_plate)
+
         ctrl_lay.addLayout(row_filter)
         v.addWidget(ctrl_frame)
 
@@ -2461,10 +3193,10 @@ class BolgelemeDialog(QDialog):
         rg_lay = QVBoxLayout(self.grp_read_guide)
         rg_lay.setContentsMargins(10, 6, 10, 6)
         self.lbl_read_guide = QLabel(
-            "<b>• Maruz Kalma (Exposure, E):</b> Tehlikeye açık nüfus, bina sayısı/TAKS ve diri fay / akarsu-taşkın kaynağına yakınlığı ölçer. Yapısız/nüfussuz tarım alanlarında E otomatik düşük kalır.<br>"
-            "<b>• Hassasiyet (Sensitivity, S):</b> Kötü yapı oranı, kat sayısı/FSI, bitişik nizam çekiçleme riski ve zemin eğimine göre yapı stoğunun hasar kırılganlığını gösterir.<br>"
-            "<b>• Uyum Kapasitesi (Adaptive Capacity, AC):</b> Yol genişliği, sokak kanyon enkaz açıklığı (<b>H/W = 3m×Kat/Yol</b>; ≥1.5 tıkanma riski), çıkmaz sokak oranı (%), acil toplanma/sağlık-donatı erişimi ve açık alan (OSR) gücüdür. <b>Yüksek AC kırılganlığı düşürür!</b><br>"
-            "<b>• Spacematrix &amp; MPYY:</b> FSI (Emsal), GSI (TAKS) ve OSR [(1-TAKS)/FSI] dokuyu sınıflar; <b>Kişi Başı Aktif Donatı (m²/kişi)</b> ve <b>Karma Entropi (0-1)</b> sosyal donatı dengesini ölçer."
+            "<b>• Exposure (E):</b> Measures population, building assets (TAKS/n) and proximity to active faults or streams/floodplains. Unpopulated vacant/farm blocks keep E low.<br>"
+            "<b>• Sensitivity (S):</b> Physical structural fragility driven by poor buildings (%), floor height/FSI, attached walls (%), and terrain slope (%).<br>"
+            "<b>• Adaptive Capacity (AC):</b> Evacuation street width, Street Canyon Debris Blockage (<b>H/W = 3m×Floors/Width</b>; ≥1.5 blocks vehicles), dead-end street %, gathering/facility access, and Open Space Ratio (OSR). <b>Higher AC lowers vulnerability [V = f(E×S/AC)].</b><br>"
+            "<b>• Spacematrix &amp; MPYY Balance:</b> FSI (density), GSI (TAKS), OSR (openness), per-capita active facility m²/person, and Shannon land-use entropy (0-1)."
         )
         self.lbl_read_guide.setWordWrap(True)
         self.lbl_read_guide.setStyleSheet("font-size: 11px; color: #0f172a; background: #f8fafc; padding: 6px; border-radius: 5px; border: 1px solid #cbd5e1;")
@@ -2565,9 +3297,39 @@ class BolgelemeDialog(QDialog):
         self.grp_cz_out = QGroupBox("Provided Zones — Analysis Summary & Vulnerability Breakdown")
         vo = QVBoxLayout(self.grp_cz_out)
         vo.setContentsMargins(10, 10, 10, 10)
+        vo.setSpacing(6)
+
+        cz_plate_bar = QHBoxLayout()
+        cz_plate_bar.setSpacing(8)
+        cz_plate_bar.addStretch()
+        self.cmb_cz_plate_fmt = QComboBox()
+        self.cmb_cz_plate_fmt.addItem("A3 Landscape", "A3_LANDSCAPE")
+        self.cmb_cz_plate_fmt.addItem("A1 Portrait", "A1_PORTRAIT")
+        self.cmb_cz_plate_fmt.setMaximumWidth(140)
+        self.btn_cz_export_plate = QPushButton("🗺️ Print Strategy Synthesis Plate (A3/A1)")
+        self.btn_cz_export_plate.setObjectName("exportBtn")
+        if PointingHandCursor is not None:
+            self.btn_cz_export_plate.setCursor(PointingHandCursor)
+        self.btn_cz_export_plate.setEnabled(False)
+        self.btn_cz_export_plate.clicked.connect(
+            lambda _: self.export_plate(paper_format=self.cmb_cz_plate_fmt.currentData())
+        )
+        if hasattr(self, "cmb_plate_fmt"):
+            self.cmb_plate_fmt.currentIndexChanged.connect(
+                lambda idx: self.cmb_cz_plate_fmt.setCurrentIndex(idx)
+                if self.cmb_cz_plate_fmt.currentIndex() != idx else None
+            )
+            self.cmb_cz_plate_fmt.currentIndexChanged.connect(
+                lambda idx: self.cmb_plate_fmt.setCurrentIndex(idx)
+                if self.cmb_plate_fmt.currentIndex() != idx else None
+            )
+        cz_plate_bar.addWidget(self.cmb_cz_plate_fmt)
+        cz_plate_bar.addWidget(self.btn_cz_export_plate)
+        vo.addLayout(cz_plate_bar)
+
         self.txt_cz = QTextEdit()
         self.txt_cz.setReadOnly(True)
-        self.txt_cz.setMinimumHeight(240)
+        self.txt_cz.setMinimumHeight(220)
         vo.addWidget(self.txt_cz)
         lay.addWidget(self.grp_cz_out, 1)
         return w
@@ -2582,12 +3344,54 @@ class BolgelemeDialog(QDialog):
         """Kullanıcı Hızlı Özet / İkisi Bir Arada / Detaylı Teknik modunu değiştirdiğinde veya filtre yazdığında raporu anında günceller."""
         if not getattr(self, "last_zones", None):
             return
+        lang_code = getattr(self, "current_lang", "en")
+        tr = UI_TRANSLATIONS.get(lang_code, UI_TRANSLATIONS["en"])
+        fb = UI_TRANSLATIONS["en"]
+        def g(k):
+            return tr.get(k, fb.get(k, ""))
+
+        if pafta_sentez is not None:
+            try:
+                self.last_swot = pafta_sentez.build_swot_synthesis(
+                    self.last_zones,
+                    P=getattr(self, "last_P", None),
+                    lang=lang_code,
+                )
+            except Exception as exc:
+                import warnings
+                warnings.warn(f"SWOT synthesis skipped: {exc}", RuntimeWarning)
+                self.last_swot = None
+
         view_id = self.view_btn_group.checkedId() if hasattr(self, "view_btn_group") else 2
         q_filter = (self.txt_filter.text().strip().lower() if hasattr(self, "txt_filter") else "")
 
         lines = []
         for msg in getattr(self, "_pipeline_logs", []):
             lines.append(msg)
+
+        if isinstance(getattr(self, "last_swot", None), dict):
+            sw = self.last_swot
+            lines.append("=" * 84)
+            lines.append(f"🧭 {g('swot_hdr')}")
+            lines.append("=" * 84)
+            sec_pairs = [
+                (g("swot_str"), sw.get("strengths") or []),
+                (g("swot_weak"), sw.get("weaknesses") or []),
+                (g("swot_opp"), sw.get("opportunities") or []),
+                (g("swot_thr"), sw.get("threats") or []),
+                (g("swot_gaps"), sw.get("data_gaps") or []),
+            ]
+            has_items = any(bool(itms) for _, itms in sec_pairs)
+            if has_items:
+                for hdr_lbl, itms in sec_pairs:
+                    if not itms:
+                        continue
+                    lines.append(f"• {hdr_lbl}:")
+                    for it in itms:
+                        txt_it = it.get("text", str(it)) if isinstance(it, dict) else str(it)
+                        lines.append(f"   - {txt_it}")
+            elif sw.get("summary_text"):
+                lines.append(str(sw["summary_text"]).strip())
 
         if view_id == 1:
             lines.append("=" * 84)
@@ -2694,7 +3498,10 @@ class BolgelemeDialog(QDialog):
                 )
 
         lines.append(f"✔ Analiz tamamlandı / Analysis completed ({len(self.last_zones)} sub-zones added to map / alt bölge haritaya eklendi, {shown} shown).")
-        self.txt.setPlainText("\n".join(lines))
+        full_text = "\n".join(lines)
+        self.txt.setPlainText(full_text)
+        if getattr(self, "last_res", None) and self.last_res.get("is_custom_zones") and hasattr(self, "txt_cz"):
+            self.txt_cz.setPlainText(full_text)
 
     def _collect_pipeline_params(self, fallback_layer=None):
         bnd = self.cmb_boundary.currentLayer()
@@ -2725,6 +3532,8 @@ class BolgelemeDialog(QDialog):
         base_lyr = bnd or blk or bldg or road or fallback_layer
         return {
             "mode": self.cmb_mode.currentData() if hasattr(self, "cmb_mode") else "advanced",
+            "lang": getattr(self, "current_lang", "en"),
+            "focus_axis": self.cmb_focus_axis.currentData() if hasattr(self, "cmb_focus_axis") else "balanced",
             "work_crs": base_lyr.crs() if base_lyr else None,
             "boundary_layer": bnd,
             "road_layer": road,
@@ -2759,50 +3568,167 @@ class BolgelemeDialog(QDialog):
         lyr, self.records = analiz.make_zone_layer(res, quick_only=False)
         lyr_quick, self.quick_records = analiz.make_zone_layer(res, quick_only=True)
         proj = QgsProject.instance()
-        if is_custom:
-            old_ids = [
-                lid for lid, l in proj.mapLayers().items()
-                if l.name().startswith("Hazir_Bolgeler")
-            ]
-        else:
-            old_ids = [
-                lid for lid, l in proj.mapLayers().items()
-                if l.name().startswith("Alt_Bolgeler") or l.name().startswith("Alt_Bölgeler")
-            ]
+
+        overlay_prefixes = (
+            "calisma_alani_maske", "afet_kirilganlik_tarama", "kritik_esik_uyari",
+            "odak_cekim", "odak_kademe", "stratejik_koridor", "dis_ulasim_aks",
+        )
+        old_ids = []
+        for lid, l in proj.mapLayers().items():
+            nm = l.name()
+            nm_norm = alg.norm_tr(nm)
+            if is_custom and nm.startswith("Hazir_Bolgeler"):
+                old_ids.append(lid)
+            elif (not is_custom) and (
+                nm.startswith("Alt_Bolgeler")
+                or nm.startswith("Alt_Bölgeler")
+                or nm == "Imar_Adasi_Hucreleri"
+            ):
+                old_ids.append(lid)
+            elif any(p in nm_norm for p in overlay_prefixes):
+                old_ids.append(lid)
         if old_ids:
             proj.removeMapLayers(old_ids)
 
-        if (not is_custom) and self.chk_cells.isChecked():
-            proj.addMapLayer(analiz.make_cell_layer(res))
+        style_mode = self.cmb_synth_style.currentData() if hasattr(self, "cmb_synth_style") else "semantic_hatch"
+        focus_axis = self.cmb_focus_axis.currentData() if hasattr(self, "cmb_focus_axis") else "balanced"
+        use_semantic = (style_mode == "semantic_hatch")
+        use_group_mask = self.chk_synth_group_mask.isChecked() if hasattr(self, "chk_synth_group_mask") else True
+        use_vuln = self.chk_synth_vuln.isChecked() if hasattr(self, "chk_synth_vuln") else True
+        use_catchments = self.chk_synth_catchments.isChecked() if hasattr(self, "chk_synth_catchments") else False
+        use_corridors = self.chk_synth_corridors.isChecked() if hasattr(self, "chk_synth_corridors") else False
+
         add_quick = (
             (self.chk_cz_quick.isChecked() if hasattr(self, "chk_cz_quick") else True)
             if is_custom
             else (hasattr(self, "chk_quick_layer") and self.chk_quick_layer.isChecked())
         )
+
+        if use_semantic and pafta_sentez is not None:
+            try:
+                pafta_sentez.apply_synthesis_zone_style(
+                    lyr,
+                    zones=res["zones"],
+                    focus_axis=focus_axis,
+                    semantic_mode=True,
+                    use_callouts=True,
+                )
+                if add_quick:
+                    pafta_sentez.apply_synthesis_zone_style(
+                        lyr_quick,
+                        zones=res["zones"],
+                        focus_axis=focus_axis,
+                        semantic_mode=True,
+                        use_callouts=False,
+                    )
+            except Exception as exc:
+                self._pipeline_logs.append(f"[Warn] Semantic zone styling fallback to classic HSV: {exc}")
+
+        overlays = {}
+        P_cur = getattr(self, "last_P", None) or {}
+        if pafta_sentez is not None and (use_group_mask or use_vuln or use_catchments or use_corridors):
+            synth_opts = {
+                "focus_axis": focus_axis,
+                "lang": getattr(self, "current_lang", "en"),
+                "include_exterior_mask": use_group_mask,
+                "exterior_mask": use_group_mask,
+                "include_vuln_hatch": use_vuln,
+                "vuln_hatch": use_vuln,
+                "include_critical_breaches": use_vuln,
+                "critical_breaches": use_vuln,
+                "include_catchments": use_catchments,
+                "catchments": use_catchments,
+                "include_hotspots": use_catchments,
+                "hotspots": use_catchments,
+                "include_focus_tiers": use_catchments,
+                "focus_tiers": use_catchments,
+                "include_corridors": use_corridors,
+                "corridors": use_corridors,
+                "include_external_gateways": use_corridors,
+                "external_gateways": use_corridors,
+            }
+            try:
+                overlays = pafta_sentez.build_synthesis_overlay_layers(res, P_cur, opts=synth_opts) or {}
+                if isinstance(self.last_P, dict):
+                    self.last_P["synthesis_layers_meta"] = [
+                        {**m, "layer": overlays.get(m.get("key"))} if isinstance(m, dict) else m
+                        for m in (overlays.get("layers_meta") or [])
+                    ]
+            except Exception as exc:
+                self._pipeline_logs.append(f"[Warn] Synthesis overlay generation skipped: {exc}")
+                overlays = {}
+
+        ordered_layers = []
+        allowed_overlay_keys = []
+        if use_vuln:
+            allowed_overlay_keys.extend(["critical_breaches"])
+        if use_catchments:
+            allowed_overlay_keys.extend(["focus_tiers"])
+        if use_corridors:
+            allowed_overlay_keys.extend(["external_gateways", "corridors"])
+        if use_vuln:
+            allowed_overlay_keys.extend(["vuln_hatch"])
+        if use_catchments:
+            allowed_overlay_keys.extend(["hotspots", "catchments"])
+        if use_group_mask:
+            allowed_overlay_keys.extend(["exterior_mask"])
+
+        for ok in allowed_overlay_keys:
+            ov_lyr = overlays.get(ok)
+            if ov_lyr is not None:
+                ordered_layers.append(ov_lyr)
+
+        ordered_layers.append(lyr)
         if add_quick:
-            proj.addMapLayer(lyr_quick)
-        proj.addMapLayer(lyr)
+            ordered_layers.append(lyr_quick)
+        if (not is_custom) and self.chk_cells.isChecked():
+            ordered_layers.append(analiz.make_cell_layer(res))
+
+        if use_group_mask and pafta_sentez is not None:
+            pafta_sentez.add_layers_to_project_grouped(
+                proj,
+                ordered_layers,
+                group_name="Spatial Strategy Synthesis",
+                replace_group=True,
+            )
+        else:
+            root_tree = proj.layerTreeRoot()
+            old_grp = root_tree.findGroup("Spatial Strategy Synthesis")
+            if old_grp is not None and not old_grp.findLayers():
+                root_tree.removeChildNode(old_grp)
+            for ol in reversed(ordered_layers):
+                proj.addMapLayer(ol)
+
         if self.iface and hasattr(self.iface, "mapCanvas") and self.iface.mapCanvas():
             self.iface.mapCanvas().refresh()
 
         active_col_names = ", ".join(self.records[0].keys()) if self.records else ""
         self._pipeline_logs.append(f"✔ Boş (NULL) sütunlar temizlendi. Aktif dolu sütunlar:\n   [{active_col_names}]")
 
+        self.last_res = res
         self.last_zones = res["zones"]
+        self.last_layer_ids = [ol.id() for ol in ordered_layers if ol is not None]
         self.refresh_report_view()
         self.btn_quick_csv.setEnabled(True)
         self.btn_csv.setEnabled(True)
         self.btn_matrix.setEnabled(True)
+        if hasattr(self, "btn_export_plate"):
+            self.btn_export_plate.setEnabled(pafta_sentez is not None and bool(self.last_zones))
+        if hasattr(self, "btn_cz_export_plate"):
+            self.btn_cz_export_plate.setEnabled(pafta_sentez is not None and bool(self.last_zones))
         self.progress.setValue(100)
 
     def run(self, interactive=True):
         P = self._collect_pipeline_params()
+        lang_code = getattr(self, "current_lang", "en")
+        tr = UI_TRANSLATIONS.get(lang_code, UI_TRANSLATIONS["en"])
+        fb = UI_TRANSLATIONS["en"]
         if not (P["boundary_layer"] or P["block_layer"] or P["bldg_layer"] or P["road_layer"]):
-            msg = "Lütfen en azından Plan Sınırı, Yol Ağı, İmar Adası veya Yapı katmanlarından birini seçiniz."
+            msg = tr.get("msg_missing_layer_txt", fb["msg_missing_layer_txt"])
             if interactive:
-                QMessageBox.warning(self, "Eksik Katman", msg)
+                QMessageBox.warning(self, tr.get("msg_missing_layer", fb["msg_missing_layer"]), msg)
             else:
-                self.log("✖ UYARI: " + msg)
+                self.log("✖ WARNING: " + msg)
             return False
 
         self.last_P = P
@@ -2818,9 +3744,9 @@ class BolgelemeDialog(QDialog):
             self._finalize_layer_outputs(res, is_custom=False)
             return True
         except Exception as e:
-            self.log("✖ HATA: " + str(e) + "\n" + traceback.format_exc())
+            self.log("✖ ERROR: " + str(e) + "\n" + traceback.format_exc())
             if interactive:
-                QMessageBox.critical(self, "Analiz Hatası", str(e))
+                QMessageBox.critical(self, tr.get("msg_error_title", fb["msg_error_title"]), str(e))
             raise
         finally:
             if WaitCursor is not None:
@@ -2832,24 +3758,21 @@ class BolgelemeDialog(QDialog):
         """Sekme 6: Kullanıcının kendi sağladığı hazır bölge poligonlarını sınırları değiştirmeden analiz eder."""
         cz_lyr = self.cmb_custom_zones.currentLayer() if hasattr(self, "cmb_custom_zones") else None
         if cz_lyr is None:
-            msg = "Please select your pre-drawn zone polygons layer first / Lütfen önce hazır bölge poligon katmanını seçiniz."
+            msg = "Please select your pre-drawn zone polygons layer first."
             if interactive:
-                QMessageBox.warning(self, "Missing Zone Layer / Eksik Katman", msg)
+                QMessageBox.warning(self, "Missing Zone Layer", msg)
             else:
-                self.txt_cz.append("✖ UYARI: " + msg)
+                self.txt_cz.append("✖ WARNING: " + msg)
             return False
 
         P = self._collect_pipeline_params(fallback_layer=cz_lyr)
         P["work_crs"] = cz_lyr.crs() if (P.get("work_crs") is None or P["work_crs"].isGeographic()) else P["work_crs"]
         if not (P["block_layer"] or P["bldg_layer"] or P["road_layer"] or P["extras"] or P["dem"]):
-            msg = (
-                "Please select existing situation layers (Blocks, Buildings, Roads, Hazards, or DEM) in Tabs 1–2 / "
-                "Lütfen Sekme 1–2'den mevcut durum katmanlarını (Adalar, Yapılar, Yollar, Doğal Eşikler veya DEM) seçiniz."
-            )
+            msg = "Please select existing situation layers (Blocks, Buildings, Roads, Hazards, or DEM) in Tabs 1–2."
             if interactive:
-                QMessageBox.warning(self, "Missing Context Layers / Mevcut Durum Eksik", msg)
+                QMessageBox.warning(self, "Missing Context Layers", msg)
             else:
-                self.txt_cz.append("✖ UYARI: " + msg)
+                self.txt_cz.append("✖ WARNING: " + msg)
             return False
 
         code_field = (self.fld_custom_code.currentField() or "") if hasattr(self, "fld_custom_code") else ""
@@ -2873,25 +3796,30 @@ class BolgelemeDialog(QDialog):
             self.txt_cz.setPlainText(self.txt.toPlainText())
             return True
         except Exception as e:
-            cz_log("✖ HATA: " + str(e) + "\n" + traceback.format_exc())
+            cz_log("✖ ERROR: " + str(e) + "\n" + traceback.format_exc())
             if interactive:
-                QMessageBox.critical(self, "Analiz Hatası", str(e))
+                QMessageBox.critical(self, "Analysis Error", str(e))
             raise
         finally:
             if WaitCursor is not None:
                 QApplication.restoreOverrideCursor()
             self.btn_cz_run.setEnabled(True)
 
-    def export_quick_csv(self, target_path=None):
+    def export_quick_csv(self, target_path=None, include_swot=False):
         """Hızlı okuma metriklerini ve sade ayrım gerekçesini içeren özet tabloyu düzenli Excel (.xlsx) veya CSV olarak dışa aktarır."""
         recs = getattr(self, "quick_records", None) or self.records
         if not recs:
             return None
+        lang_code = getattr(self, "current_lang", "en")
+        tr = UI_TRANSLATIONS.get(lang_code, UI_TRANSLATIONS["en"])
+        fb = UI_TRANSLATIONS["en"]
+        is_custom = bool((getattr(self, "last_res", None) or {}).get("is_custom_zones", False))
         if target_path:
             path = target_path
         else:
             n_z = len(recs)
-            default_fname = f"Alt_Bolgeler_1_{n_z}_Hizli_Ozet_Tablo.xlsx"
+            base_prefix = "Hazir_Bolgeler" if is_custom else "Alt_Bolgeler"
+            default_fname = f"{base_prefix}_1_{n_z}_Hizli_Ozet_Tablo.xlsx"
             path, _ = QFileDialog.getSaveFileName(
                 self,
                 "Save Quick Summary Table (Excel / CSV)",
@@ -2906,7 +3834,8 @@ class BolgelemeDialog(QDialog):
                 self.records or recs,
                 quick_records=recs,
                 P=getattr(self, "last_P", None),
-                zones=getattr(self, "last_zones", None)
+                zones=getattr(self, "last_zones", None),
+                include_swot=bool(include_swot),
             )
         else:
             keys = list(recs[0].keys())
@@ -2915,19 +3844,31 @@ class BolgelemeDialog(QDialog):
                 w.writeheader()
                 w.writerows(recs)
         if not target_path:
-            QMessageBox.information(self, "Saved / Kaydedildi", f"Quick Summary table saved:\n{path}")
+            QMessageBox.information(
+                self,
+                tr.get("msg_saved_title", fb["msg_saved_title"]),
+                f"{tr.get('msg_saved_quick', fb['msg_saved_quick'])}\n{path}",
+            )
         return path
 
-    def export_csv(self, target_path=None):
+    def export_csv(self, target_path=None, include_swot=None):
         if not self.records:
             return None
+        lang_code = getattr(self, "current_lang", "en")
+        tr = UI_TRANSLATIONS.get(lang_code, UI_TRANSLATIONS["en"])
+        fb = UI_TRANSLATIONS["en"]
+        is_custom = bool((getattr(self, "last_res", None) or {}).get("is_custom_zones", False))
+        use_swot = bool(include_swot) if include_swot is not None else (target_path is None and bool(getattr(self, "last_swot", None)))
         if target_path:
             path = target_path
         else:
             is_adv = (self.cmb_mode.currentData() == "advanced") if hasattr(self, "cmb_mode") else True
             prefix = "M" if is_adv else "A"
             n_z = len(self.records)
-            default_fname = f"Alt_Bolgeler_{prefix}1_{prefix}{n_z}_Tam_Tablo.xlsx"
+            default_fname = (
+                f"Hazir_Bolgeler_Analizi_{n_z}_Tam_Tablo.xlsx"
+                if is_custom else f"Alt_Bolgeler_{prefix}1_{prefix}{n_z}_Tam_Tablo.xlsx"
+            )
             path, _ = QFileDialog.getSaveFileName(
                 self,
                 "Save Full Sub-Zone Table (Excel / CSV)",
@@ -2942,7 +3883,8 @@ class BolgelemeDialog(QDialog):
                 self.records,
                 quick_records=getattr(self, "quick_records", None),
                 P=getattr(self, "last_P", None),
-                zones=getattr(self, "last_zones", None)
+                zones=getattr(self, "last_zones", None),
+                include_swot=use_swot,
             )
         else:
             keys = list(self.records[0].keys())
@@ -2951,12 +3893,19 @@ class BolgelemeDialog(QDialog):
                 w.writeheader()
                 w.writerows(self.records)
         if not target_path:
-            QMessageBox.information(self, "Saved / Kaydedildi", f"Full Sub-Zone table saved:\n{path}")
+            QMessageBox.information(
+                self,
+                tr.get("msg_saved_title", fb["msg_saved_title"]),
+                f"{tr.get('msg_saved_full', fb['msg_saved_full'])}\n{path}",
+            )
         return path
 
     def export_analysis_matrix(self, target_path=None):
         if not hasattr(self, "last_P") or not self.last_P:
             return None
+        lang_code = getattr(self, "current_lang", "en")
+        tr = UI_TRANSLATIONS.get(lang_code, UI_TRANSLATIONS["en"])
+        fb = UI_TRANSLATIONS["en"]
         if target_path:
             path = target_path
         else:
@@ -2970,5 +3919,70 @@ class BolgelemeDialog(QDialog):
                 return None
         analiz.export_analysis_tracking_matrix(self.last_P, getattr(self, "last_zones", None), path)
         if not target_path:
-            QMessageBox.information(self, "Saved / Kaydedildi", f"Analysis Tracking Matrix saved:\n{path}")
+            QMessageBox.information(
+                self,
+                tr.get("msg_saved_title", fb["msg_saved_title"]),
+                f"{tr.get('msg_saved_matrix', fb['msg_saved_matrix'])}\n{path}",
+            )
         return path
+
+    def export_plate(self, pdf_path=None, png_path=None, qpt_path=None, paper_format=None, title=None, interactive=None):
+        """Creates a QGIS Print Layout and exports the Strategic Synthesis Plate (PDF / PNG / QPT)."""
+        if not getattr(self, "last_zones", None) or pafta_sentez is None:
+            return None
+        lang_code = getattr(self, "current_lang", "en")
+        tr = UI_TRANSLATIONS.get(lang_code, UI_TRANSLATIONS["en"])
+        fb = UI_TRANSLATIONS["en"]
+        has_prog_path = any(p is not None for p in (pdf_path, png_path, qpt_path))
+        if interactive is None:
+            interactive = not has_prog_path
+
+        fmt = paper_format or (self.cmb_plate_fmt.currentData() if hasattr(self, "cmb_plate_fmt") else "A3_LANDSCAPE")
+        focus_axis = self.cmb_focus_axis.currentData() if hasattr(self, "cmb_focus_axis") else "balanced"
+
+        if interactive and not has_prog_path:
+            fmt_tag = "A1_Portrait" if fmt == "A1_PORTRAIT" else "A3_Landscape"
+            default_fname = f"Spatial_Strategy_Synthesis_Plate_{fmt_tag}.pdf"
+            chosen_path, _ = QFileDialog.getSaveFileName(
+                self,
+                "Export Strategic Synthesis Plate (PDF / PNG / QPT)",
+                default_fname,
+                "PDF Strategy Plate (*.pdf);;High-Res PNG Image (*.png);;QGIS Print Template (*.qpt)"
+            )
+            if not chosen_path:
+                return None
+            low_p = chosen_path.lower()
+            if low_p.endswith(".png"):
+                png_path = chosen_path
+            elif low_p.endswith(".qpt"):
+                qpt_path = chosen_path
+            else:
+                pdf_path = chosen_path
+
+        plate_title = title or (
+            "Mekânsal Strateji ve Kırılganlık Sentez Paftası"
+            if lang_code == "tr"
+            else "Spatial Strategy & Vulnerability Synthesis Plate"
+        )
+        out = pafta_sentez.create_synthesis_print_layout(
+            QgsProject.instance(),
+            self.last_zones,
+            res=getattr(self, "last_res", None),
+            P=getattr(self, "last_P", None),
+            paper_format=fmt,
+            title=plate_title,
+            focus_axis=focus_axis,
+            lang=lang_code,
+            export_pdf_path=pdf_path,
+            export_png_path=png_path,
+            export_qpt_path=qpt_path,
+            layer_ids_for_map=getattr(self, "last_layer_ids", None),
+        )
+        if interactive:
+            saved_target = pdf_path or png_path or qpt_path or ""
+            QMessageBox.information(
+                self,
+                tr.get("msg_plate_title", fb["msg_plate_title"]),
+                f"{tr.get('msg_plate_saved', fb['msg_plate_saved'])}\n{saved_target}",
+            )
+        return out
